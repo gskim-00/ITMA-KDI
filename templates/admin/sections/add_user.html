@@ -1,0 +1,187 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-person-plus-fill"></i> 신규 계정 등록
+        </h2>
+        <p class="section-description">
+            신규 계정을 생성하거나 엑셀을 통해 일괄 등록할 수 있으며, 역할 및 이메일 설정을 지정할 수 있습니다.
+        </p>
+    </div>
+    <div class="section-body">
+        <!-- 탭 네비게이션 -->
+        <ul class="nav nav-tabs mb-4" id="addUserTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="single-user-tab" data-bs-toggle="tab" data-bs-target="#single-user" type="button" role="tab">
+                    <i class="bi bi-person-plus"></i> 개별 등록
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="bulk-user-tab" data-bs-toggle="tab" data-bs-target="#bulk-user" type="button" role="tab">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> 엑셀 일괄 등록
+                </button>
+            </li>
+        </ul>
+
+        <!-- 탭 컨텐츠 -->
+        <div class="tab-content" id="addUserTabContent">
+            <!-- 개별 등록 탭 -->
+            <div class="tab-pane fade show active" id="single-user" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <form action="{{ url_for('admin.add_user') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <div class="mb-3">
+                                <label class="form-label">사용자 ID</label>
+                                <input type="text" name="username" class="form-control"  autocomplete="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">이름</label>
+                                <input type="text" name="real_name" class="form-control" autocomplete="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">비밀번호</label>
+                                <input type="password" name="password" class="form-control" autocomplete="new-password" required>
+                                <small class="text-muted">최소 6자 이상 입력하세요</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">이메일</label>
+                                <input type="email" name="email" class="form-control" placeholder="선택사항" autocomplete="email">
+                                <small class="text-muted">입력하면 환영 메일이 전송됩니다</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">권한</label>
+                                <select name="role" class="form-select" required>
+                                    <option value="">선택하세요</option>
+                                    <option value="user">사용자 (user)</option>
+                                    <option value="manager">매니저 (manager)</option>
+                                    <option value="admin">관리자 (admin)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">허용 IP</label>
+                                <textarea
+                                    name="allowed_ip_list"
+                                    class="form-control"
+                                    rows="3"
+                                    placeholder="선택사항 (예: 192.168.0.10/24)"
+                                ></textarea>
+                                <small class="text-muted">비워두면 모든 IP 허용, 여러 개는 줄바꿈 또는 쉼표로 구분합니다.</small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> 등록
+                                </button>
+                                <button type="reset" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-counterclockwise"></i> 초기화
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="alert alert-info">
+                            <h6>
+                                <i class="bi bi-info-circle"></i> 주의사항
+                            </h6>
+                            <ul class="mb-0">
+                                <li>사용자 ID는 중복되지 않아야 합니다</li>
+                                <li>비밀번호는 최소 6자 이상이어야 합니다</li>
+                                <li>이메일은 선택사항입니다 (입력 시 환영 메일 발송)</li>
+                                <li>허용 IP를 지정하면 해당 IP 또는 대역에서만 로그인할 수 있습니다</li>
+                                <li>첫 로그인 후 비밀번호 변경을 권장합니다</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 엑셀 일괄 등록 탭 -->
+            <div class="tab-pane fade" id="bulk-user" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <i class="bi bi-cloud-upload"></i> 엑셀 파일 업로드
+                            </div>
+                            <div class="card-body">
+                                <form id="bulkUserUploadForm" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">엑셀 파일 선택</label>
+                                        <input type="file" class="form-control" id="bulkUserFile" accept=".xlsx,.xls,.csv" required>
+                                        <small class="text-muted">지원 형식: .xlsx, .xls, .csv</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="sendWelcomeEmail">
+                                            <label class="form-check-label" for="sendWelcomeEmail">
+                                                등록 후 환영 이메일 자동 발송 (이메일 입력된 사용자만)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="bi bi-upload"></i> 업로드 및 등록
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="downloadBulkUserTemplate()">
+                                            <i class="bi bi-download"></i> 템플릿 다운로드
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <!-- 업로드 진행 상태 -->
+                                <div id="bulkUploadProgress" class="mt-4" style="display: none;">
+                                    <div class="progress" style="height: 25px;">
+                                        <div id="bulkProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                             role="progressbar" style="width: 0%">0%</div>
+                                    </div>
+                                    <p id="bulkProgressText" class="text-center mt-2 text-muted">처리 중...</p>
+                                </div>
+
+                                <!-- 결과 표시 -->
+                                <div id="bulkUploadResult" class="mt-4" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="alert alert-warning">
+                            <h6>
+                                <i class="bi bi-exclamation-triangle"></i> 엑셀 템플릿 형식
+                            </h6>
+                            <p class="mb-2"><strong>필수 컬럼:</strong></p>
+                            <ul class="mb-2">
+                                <li><code>username</code> - 사용자 ID</li>
+                                <li><code>real_name</code> - 이름</li>
+                                <li><code>password</code> - 비밀번호</li>
+                                <li><code>role</code> - 권한 (user/manager/admin)</li>
+                            </ul>
+                            <p class="mb-2"><strong>선택 컬럼:</strong></p>
+                            <ul class="mb-3">
+                                <li><code>email</code> - 이메일</li>
+                            </ul>
+                            <p class="mb-0">
+                                <small class="text-danger">
+                                    ※ 첫 번째 행은 컬럼명으로 사용됩니다.<br>
+                                    ※ 중복된 ID는 자동으로 건너뜁니다.
+                                </small>
+                            </p>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6>
+                                <i class="bi bi-lightbulb"></i> 팁
+                            </h6>
+                            <ul class="mb-0">
+                                <li>최대 500명까지 한 번에 등록 가능</li>
+                                <li>템플릿을 다운로드하여 형식 확인</li>
+                                <li>role은 정확히 입력 (대소문자 구분)</li>
+                                <li>비밀번호는 최소 6자 이상</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/bulk-user-upload.js') }}"></script>

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}ONE ITMA 대시보드{% endblock %}
+
+{% block navbar_title %}ONE ITMA{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/itma.css') }}?v=20261112a">
+{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="section-title mb-0">
+        <i class="bi bi-speedometer2"></i> 자산 현황
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="small text-muted">마지막 갱신 <span id="itmaDashLastRefreshed">-</span></span>
+        <button type="button" id="btnItmaDashRefresh" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> 새로고침
+        </button>
+        <a href="{{ url_for('itma.assets_page') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-table"></i> 자산 관리
+        </a>
+        <a href="{{ url_for('itma.open_dashboard_live') }}" target="_blank" rel="noopener" class="btn btn-outline-success btn-sm" title="로그인 없이 볼 수 있는 대시보드를 새 창으로 엽니다">
+            <i class="bi bi-box-arrow-up-right"></i> 새 창
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="itma-main-dashboard">
+    <div class="itma-dashboard-hero mb-3">
+        <article class="itma-hero-card hero-d"><div class="hero-title">전체 자산</div><div class="hero-value" id="itmaDashTotal">0</div><i class="bi bi-box-seam hero-icon"></i></article>
+        <article class="itma-hero-card hero-b"><div class="hero-title">사업장</div><div class="hero-value" id="itmaDashSiteCount">0</div><i class="bi bi-buildings hero-icon"></i></article>
+        <article class="itma-hero-card hero-a"><div class="hero-title">카테고리</div><div class="hero-value" id="itmaDashCategoryCount">0</div><i class="bi bi-grid-3x3-gap hero-icon"></i></article>
+        <article class="itma-hero-card hero-c"><div class="hero-title">최근 30일 수정</div><div class="hero-value" id="itmaDashUpdated30d">0</div><i class="bi bi-clock-history hero-icon"></i></article>
+    </div>
+
+    <section class="itma-dash-status mb-3" aria-label="운영상태별 자산 수">
+        <h6 class="itma-dash-section-title">운영상태</h6>
+        <div class="itma-dash-status-grid" id="itmaDashStatusGrid"></div>
+    </section>
+
+    <div class="itma-dashboard-insight-grid">
+        <section class="itma-insight-card">
+            <div class="itma-insight-header"><h6 class="mb-0">사업장별</h6><span class="small text-muted">항목을 누르면 해당 사업장 자산 목록으로 이동</span></div>
+            <div class="itma-insight-body">
+                <div class="table-responsive itma-insight-table-wrap"><table class="table table-sm table-hover mb-0 itma-insight-table"><thead><tr><th>사업장</th><th class="text-end">수량</th><th class="text-end">비율</th></tr></thead><tbody id="itmaDashSiteBody"></tbody></table></div>
+                <div class="itma-donut-row"><div class="itma-donut" id="itmaDashSiteDonut"></div><div class="itma-donut-legend" id="itmaDashSiteLegend"></div></div>
+            </div>
+        </section>
+        <section class="itma-insight-card">
+            <div class="itma-insight-header"><h6 class="mb-0">카테고리별</h6></div>
+            <div class="itma-insight-body">
+                <div class="table-responsive itma-insight-table-wrap"><table class="table table-sm table-striped mb-0 itma-insight-table"><thead><tr><th>카테고리</th><th class="text-end">수량</th><th class="text-end">비율</th></tr></thead><tbody id="itmaDashCategoryBody"></tbody></table></div>
+                <div class="itma-donut-row"><div class="itma-donut" id="itmaDashCategoryDonut"></div><div class="itma-donut-legend" id="itmaDashCategoryLegend"></div></div>
+            </div>
+        </section>
+        <section class="itma-insight-card">
+            <div class="itma-insight-header"><h6 class="mb-0">제조사별</h6></div>
+            <div class="itma-insight-body">
+                <div class="table-responsive itma-insight-table-wrap"><table class="table table-sm table-striped mb-0 itma-insight-table"><thead><tr><th>제조사</th><th class="text-end">수량</th><th class="text-end">비율</th></tr></thead><tbody id="itmaDashManufacturerBody"></tbody></table></div>
+                <div class="itma-donut-row"><div class="itma-donut" id="itmaDashManufacturerDonut"></div><div class="itma-donut-legend" id="itmaDashManufacturerLegend"></div></div>
+            </div>
+        </section>
+        <section class="itma-insight-card">
+            <div class="itma-insight-header"><h6 class="mb-0">보관 위치별</h6></div>
+            <div class="itma-insight-body">
+                <div class="table-responsive itma-insight-table-wrap"><table class="table table-sm table-striped mb-0 itma-insight-table"><thead><tr><th>보관 위치</th><th class="text-end">수량</th><th class="text-end">비율</th></tr></thead><tbody id="itmaDashStorageBody"></tbody></table></div>
+                <div class="itma-donut-row"><div class="itma-donut" id="itmaDashStorageDonut"></div><div class="itma-donut-legend" id="itmaDashStorageLegend"></div></div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/itma-dashboard.js') }}?v=20261112a"></script>
+{% endblock %}

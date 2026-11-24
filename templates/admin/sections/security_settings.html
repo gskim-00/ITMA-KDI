@@ -1,0 +1,280 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-shield-lock"></i> 보안 설정
+        </h2>
+        <p class="section-description">
+            비밀번호 정책, 세션 정책, 로그인 시도 제한, IP 필터를 통합 관리합니다.
+        </p>
+    </div>
+    <div class="section-body">
+        <ul class="nav nav-tabs mb-4" id="securitySettingsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="security-password-tab" data-bs-toggle="tab" data-bs-target="#security-password-pane" type="button" role="tab" aria-controls="security-password-pane" aria-selected="true">
+                        <i class="bi bi-key"></i> 비밀번호 정책
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="security-session-tab" data-bs-toggle="tab" data-bs-target="#security-session-pane" type="button" role="tab" aria-controls="security-session-pane" aria-selected="false">
+                        <i class="bi bi-clock-history"></i> 세션 설정
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="security-login-limit-tab" data-bs-toggle="tab" data-bs-target="#security-login-limit-pane" type="button" role="tab" aria-controls="security-login-limit-pane" aria-selected="false">
+                        <i class="bi bi-shield-x"></i> 로그인 시도 제한
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="security-login-alert-tab" data-bs-toggle="tab" data-bs-target="#security-login-alert-pane" type="button" role="tab" aria-controls="security-login-alert-pane" aria-selected="false">
+                        <i class="bi bi-bell"></i> 로그인 시도 경고
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="security-ip-tab" data-bs-toggle="tab" data-bs-target="#security-ip-pane" type="button" role="tab" aria-controls="security-ip-pane" aria-selected="false">
+                        <i class="bi bi-shield-check"></i> IP 필터링
+                    </button>
+                </li>
+            </ul>
+
+        <div class="tab-content" id="securitySettingsTabContent">
+            <div class="tab-pane fade show active" id="security-password-pane" role="tabpanel" aria-labelledby="security-password-tab">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="security-section border rounded p-4">
+                            <h6 class="mb-3"><i class="bi bi-key"></i> 비밀번호 정책</h6>
+                            <form id="passwordPolicyForm">
+                                <div class="mb-3">
+                                    <label class="form-label">최소 길이</label>
+                                    <input type="number" name="min_length" class="form-control" value="8" min="6" max="20">
+                                    <small class="text-muted">최소 비밀번호 길이 (6-20자)</small>
+                                </div>
+                                <div class="mb-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="require_uppercase" id="requireUppercase" checked><label class="form-check-label" for="requireUppercase">대문자 포함 필수</label></div></div>
+                                <div class="mb-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="require_lowercase" id="requireLowercase" checked><label class="form-check-label" for="requireLowercase">소문자 포함 필수</label></div></div>
+                                <div class="mb-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="require_number" id="requireNumber" checked><label class="form-check-label" for="requireNumber">숫자 포함 필수</label></div></div>
+                                <div class="mb-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="require_special" id="requireSpecial" checked><label class="form-check-label" for="requireSpecial">특수문자 포함 필수 (!@#$%^&*)</label></div></div>
+                                <div class="mb-3">
+                                    <label class="form-label">비밀번호 유효기간 (일)</label>
+                                    <input type="number" name="expiry_days" class="form-control" value="0" min="0" max="365">
+                                    <small class="text-muted">0은 유효기간 무제한</small>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="saveSecuritySettings('password', this)"><i class="bi bi-check-circle"></i> 저장</button>
+                                <div class="mt-2" id="passwordPolicyResult"></div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> 비밀번호 정책 안내</h6>
+                            <ul class="mb-0">
+                                <li>최소 길이와 필수 조합(대/소문자, 숫자, 특수문자)을 설정합니다.</li>
+                                <li>유효기간을 0으로 두면 만료 없이 사용할 수 있습니다.</li>
+                                <li>정책 변경 후 신규/변경 비밀번호부터 적용됩니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="security-session-pane" role="tabpanel" aria-labelledby="security-session-tab">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="security-section border rounded p-4">
+                            <h6 class="mb-3"><i class="bi bi-clock-history"></i> 세션 설정</h6>
+                            <form id="sessionTimeoutForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">세션 타임아웃 (분)</label>
+                                        <input type="number" name="timeout_minutes" class="form-control" value="10" min="5" max="1440">
+                                        <small class="text-muted">비활성 시간 후 자동 로그아웃</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">절대 세션 만료 (시간)</label>
+                                        <input type="number" name="absolute_timeout_hours" class="form-control" value="8" min="1" max="24">
+                                        <small class="text-muted">로그인 후 최대 유지 시간</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">동시 로그인 제한</label>
+                                        <select name="concurrent_sessions" class="form-select">
+                                            <option value="0">제한 없음</option>
+                                            <option value="1">1개 (단일 세션)</option>
+                                            <option value="3">3개</option>
+                                            <option value="5">5개</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 d-flex flex-column justify-content-center gap-2">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="warn_before_timeout" id="warnBeforeTimeout" checked>
+                                            <label class="form-check-label" for="warnBeforeTimeout">타임아웃 전 경고 표시</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe" checked>
+                                            <label class="form-check-label" for="rememberMe">"로그인 상태 유지" 기능 허용</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="auto_cleanup" id="autoCleanup" checked>
+                                            <label class="form-check-label" for="autoCleanup">만료 세션 자동 정리</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm mt-3" onclick="saveSecuritySettings('session', this)"><i class="bi bi-check-circle"></i> 저장</button>
+                                <div class="mt-2" id="sessionTimeoutResult"></div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> 세션 설정 안내</h6>
+                            <ul class="mb-0">
+                                <li>세션 타임아웃은 비활성 사용자 자동 로그아웃 기준입니다.</li>
+                                <li>절대 만료는 로그인 후 강제 종료되는 최대 시간입니다.</li>
+                                <li>동시 로그인 제한과 유지 옵션은 계정 공유 통제에 사용됩니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="security-login-limit-pane" role="tabpanel" aria-labelledby="security-login-limit-tab">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="security-section border rounded p-4">
+                            <h6 class="mb-3"><i class="bi bi-exclamation-shield"></i> 로그인 시도 제한</h6>
+                            <form id="loginAttemptLimitForm">
+                                <div class="mb-3">
+                                    <label class="form-label">최대 실패 횟수</label>
+                                    <input type="number" name="max_attempts" class="form-control" value="5" min="3" max="20">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">잠금 시간 (분)</label>
+                                    <input type="number" name="lockout_duration" class="form-control" value="15" min="5" max="120">
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label">타임 윈도우 (분)</label>
+                                    <input type="number" name="time_window" class="form-control" value="10" min="5" max="60">
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm mt-3" onclick="saveSecuritySettings('login_attempt_limit_tab', this)"><i class="bi bi-check-circle"></i> 저장</button>
+                                <div class="mt-2" id="loginAttemptLimitResult"></div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="alert alert-warning">
+                            <h6><i class="bi bi-exclamation-triangle"></i> 로그인 제한 안내</h6>
+                            <ul class="mb-0">
+                                <li>지정한 시간 내 실패 누적이 기준 이상이면 잠금 처리됩니다.</li>
+                                <li>관리자 경고 메일을 켜면 임계치 도달 시 즉시 알림됩니다.</li>
+                                <li>과도하게 낮은 기준은 정상 사용자 불편을 유발할 수 있습니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="security-login-alert-pane" role="tabpanel" aria-labelledby="security-login-alert-tab">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="security-section border rounded p-4">
+                            <h6 class="mb-3"><i class="bi bi-bell"></i> 로그인 시도 경고</h6>
+                            <form id="loginAttemptAlertForm">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="enable_failed_login_alert" id="enableFailedLoginAlert">
+                                        <label class="form-check-label" for="enableFailedLoginAlert">로그인 실패 누적 시 경고 메일 발송</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">실패 횟수</label>
+                                    <input type="number" name="failed_login_alert_threshold" class="form-control" value="5" min="1" max="50">
+                                    <small class="text-muted">동일 계정 기준, 타임 윈도우 내 실패 횟수</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">메일 발송 대상</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="failed_login_alert_include_admin" id="failedLoginAlertIncludeAdmin" checked>
+                                        <label class="form-check-label" for="failedLoginAlertIncludeAdmin">관리자 계정 이메일 포함</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="failed_login_alert_include_attempt_user" id="failedLoginAlertIncludeAttemptUser" checked>
+                                        <label class="form-check-label" for="failedLoginAlertIncludeAttemptUser">로그인 시도 유저ID 이메일 포함</label>
+                                    </div>
+                                    <label class="form-label mt-2">추가 수신자</label>
+                                    <textarea name="failed_login_alert_custom_recipients" class="form-control" rows="2" placeholder="보안담당자 이메일을 쉼표(,) 또는 줄바꿈으로 입력"></textarea>
+                                    <small class="text-muted">예: sec1@company.com, sec2@company.com</small>
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label">이메일 템플릿</label>
+                                    <select name="failed_login_alert_template_id" id="failedLoginAlertTemplate" class="form-select">
+                                        <option value="">기본 경고 템플릿 사용</option>
+                                    </select>
+                                    <small class="text-muted">`failed_login_alert` 유형 템플릿 사용을 권장합니다.</small>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm mt-3" onclick="saveSecuritySettings('login_attempt_alert_tab', this)"><i class="bi bi-check-circle"></i> 저장</button>
+                                <div class="mt-2" id="loginAttemptAlertResult"></div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="alert alert-warning">
+                            <h6><i class="bi bi-exclamation-triangle"></i> 로그인 경고 안내</h6>
+                            <ul class="mb-0">
+                                <li>경고 임계치 도달 시 관리자/지정 수신자에게 즉시 메일을 보냅니다.</li>
+                                <li>경고 템플릿을 지정하면 변수 치환된 보안 알림이 발송됩니다.</li>
+                                <li>수신자 설정이 비어 있으면 알림 메일이 전송되지 않을 수 있습니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="security-ip-pane" role="tabpanel" aria-labelledby="security-ip-tab">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="security-section border rounded p-4">
+                            <h6 class="mb-3"><i class="bi bi-shield-check"></i> IP 필터링</h6>
+                            <form id="ipFilterForm">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="enable_ip_filter" id="enableIpFilter">
+                                        <label class="form-check-label" for="enableIpFilter">IP 필터링 활성화</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="ip_filter_type" value="whitelist" id="ipWhitelist">
+                                        <label class="form-check-label" for="ipWhitelist">화이트리스트 (허용된 IP만 접근)</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="ip_filter_type" value="blacklist" id="ipBlacklist" checked>
+                                        <label class="form-check-label" for="ipBlacklist">블랙리스트 (차단된 IP 접근 불가)</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">IP 주소 목록</label>
+                                    <textarea name="ip_list" class="form-control" rows="4"></textarea>
+                                    <small class="text-muted d-block mt-2">
+                                        <strong>입력 방법:</strong><br>
+                                        • 단일 IP: 192.168.1.1/32<br>
+                                        • CIDR 표기법: 10.0.0.0/24<br>
+                                        • 한 줄에 하나씩 입력
+                                    </small>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="saveSecuritySettings('ip_filter', this)"><i class="bi bi-check-circle"></i> 저장</button>
+                                <div class="mt-2" id="ipFilterResult"></div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="alert alert-secondary">
+                            <h6><i class="bi bi-info-circle"></i> IP 필터 안내</h6>
+                            <ul class="mb-0">
+                                <li>화이트리스트는 등록된 IP만 접근 허용합니다.</li>
+                                <li>블랙리스트는 등록된 IP만 접근 차단합니다.</li>
+                                <li>CIDR 표기와 단일 IP를 함께 사용할 수 있습니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

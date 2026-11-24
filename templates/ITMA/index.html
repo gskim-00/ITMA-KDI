@@ -1,0 +1,713 @@
+{% extends 'base.html' %}
+
+{% block title %}ONE ITMA{% endblock %}
+
+{% block navbar_title %}ONE ITMA{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/itma.css') }}?v=20261112a">
+{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="section-title mb-0">
+        <i class="bi bi-file-earmark-spreadsheet"></i> 자산 관리
+    </div>
+    <div class="d-flex gap-2">
+        <div class="btn-group">
+            <a href="{{ url_for('itma.page') }}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-speedometer2"></i> 대시보드
+            </a>
+            <button type="button" class="btn btn-outline-success btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">대시보드 방식 선택</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item itma-dashboard-open-option" href="#" data-dashboard-mode="modal"><i class="bi bi-layout-sidebar-inset"></i> 모달로 보기</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item itma-dashboard-open-option" href="#" data-dashboard-mode="window" data-refresh-minutes="5"><i class="bi bi-box-arrow-up-right"></i> 새 창</a></li>
+            </ul>
+        </div>
+        <button type="button" id="btnOpenItmaDurability" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-exclamation-diamond"></i> 내구연한
+        </button>
+        <button type="button" id="btnOpenItmaHistory" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-clock-history"></i> 변경이력
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include 'ITMA/sections/itma_page.html' %}
+
+<div class="modal fade" id="itmaDashboardModal" tabindex="-1" aria-labelledby="itmaDashboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-success-subtle">
+                <h5 class="modal-title" id="itmaDashboardModalLabel">
+                    <i class="bi bi-speedometer2"></i> ITMA 대시보드
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body">
+                <div class="itma-dashboard-hero mb-3">
+                    <article class="itma-hero-card hero-d itma-selectable-card" data-dashboard-target="total">
+                        <div class="hero-title">전체 자산</div>
+                        <div class="hero-value" id="itmaKpiTotalCount">0</div>
+                        <i class="bi bi-box-seam hero-icon"></i>
+                    </article>
+                    <article class="itma-hero-card hero-a itma-selectable-card" data-dashboard-target="category">
+                        <div class="hero-title">구분 수량</div>
+                        <div class="hero-value" id="itmaKpiCategoryCount">0</div>
+                        <i class="bi bi-grid-3x3-gap hero-icon"></i>
+                    </article>
+                    <article class="itma-hero-card hero-b itma-selectable-card" data-dashboard-target="manufacturer">
+                        <div class="hero-title">제조사 수량</div>
+                        <div class="hero-value" id="itmaKpiManufacturerCount">0</div>
+                        <i class="bi bi-building hero-icon"></i>
+                    </article>
+                    <article class="itma-hero-card hero-c itma-selectable-card" data-dashboard-target="storage">
+                        <div class="hero-title">보관장소 수량</div>
+                        <div class="hero-value" id="itmaKpiStorageCount">0</div>
+                        <i class="bi bi-geo-alt hero-icon"></i>
+                    </article>
+                </div>
+
+                <div class="itma-dashboard-progress mb-3">
+                    <article class="itma-progress-card itma-selectable-card" data-dashboard-target="category">
+                        <div class="progress-title">구분 입력 진행률</div>
+                        <div class="progress-track"><div class="progress-fill" id="itmaProgCategoryBar"></div></div>
+                        <div class="progress-meta"><span>입력률</span><strong id="itmaProgCategoryText">0%</strong></div>
+                    </article>
+                    <article class="itma-progress-card itma-selectable-card" data-dashboard-target="manufacturer">
+                        <div class="progress-title">제조사 입력 진행률</div>
+                        <div class="progress-track"><div class="progress-fill" id="itmaProgManufacturerBar"></div></div>
+                        <div class="progress-meta"><span>입력률</span><strong id="itmaProgManufacturerText">0%</strong></div>
+                    </article>
+                    <article class="itma-progress-card itma-selectable-card" data-dashboard-target="storage">
+                        <div class="progress-title">보관장소 입력 진행률</div>
+                        <div class="progress-track"><div class="progress-fill" id="itmaProgStorageBar"></div></div>
+                        <div class="progress-meta"><span>입력률</span><strong id="itmaProgStorageText">0%</strong></div>
+                    </article>
+                    <article class="itma-progress-card itma-selectable-card" data-dashboard-target="serial">
+                        <div class="progress-title">시리얼번호 입력 진행률</div>
+                        <div class="progress-track"><div class="progress-fill" id="itmaProgSerialBar"></div></div>
+                        <div class="progress-meta"><span>입력률</span><strong id="itmaProgSerialText">0%</strong></div>
+                    </article>
+                </div>
+
+                <div class="itma-dashboard-bottom">
+                    <section class="itma-bottom-card">
+                        <ul class="nav nav-tabs itma-dashboard-tabs" id="itmaDashboardTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="itma-tab-category" data-bs-toggle="tab" data-bs-target="#itma-pane-category" type="button" role="tab">
+                                    구분 (전체 <span id="itmaCategoryTotalInTab">0</span>)
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="itma-tab-manufacturer" data-bs-toggle="tab" data-bs-target="#itma-pane-manufacturer" type="button" role="tab">
+                                    제조사 (전체 <span id="itmaManufacturerTotalInTab">0</span>)
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="itma-tab-storage" data-bs-toggle="tab" data-bs-target="#itma-pane-storage" type="button" role="tab">
+                                    보관장소 (전체 <span id="itmaStorageTotalInTab">0</span>)
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content border border-top-0 rounded-bottom p-2">
+                            <div class="tab-pane fade show active" id="itma-pane-category" role="tabpanel">
+                                <div class="table-responsive itma-insight-table-wrap">
+                                    <table class="table table-sm table-striped mb-0 itma-insight-table">
+                                        <thead>
+                                            <tr><th>구분</th><th class="text-end">수량</th><th class="text-end">비율</th></tr>
+                                        </thead>
+                                        <tbody id="itmaCategorySummaryBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="itma-pane-manufacturer" role="tabpanel">
+                                <div class="table-responsive itma-insight-table-wrap">
+                                    <table class="table table-sm table-striped mb-0 itma-insight-table">
+                                        <thead>
+                                            <tr><th>제조사</th><th class="text-end">수량</th><th class="text-end">비율</th></tr>
+                                        </thead>
+                                        <tbody id="itmaManufacturerSummaryBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="itma-pane-storage" role="tabpanel">
+                                <div class="table-responsive itma-insight-table-wrap">
+                                    <table class="table table-sm table-striped mb-0 itma-insight-table">
+                                        <thead>
+                                            <tr><th>보관장소</th><th class="text-end">수량</th><th class="text-end">비율</th></tr>
+                                        </thead>
+                                        <tbody id="itmaStorageSummaryBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="itma-bottom-card">
+                        <div class="itma-dashboard-charts">
+                            <div class="itma-chart-card">
+                                <h6 class="mb-2">구분 그래프</h6>
+                                <div class="itma-donut-row">
+                                    <div class="itma-donut" id="itmaCategoryDonut" aria-label="구분 그래프"></div>
+                                </div>
+                            </div>
+                            <div class="itma-chart-card">
+                                <h6 class="mb-2">제조사 그래프</h6>
+                                <div class="itma-donut-row">
+                                    <div class="itma-donut" id="itmaManufacturerDonut" aria-label="제조사 그래프"></div>
+                                </div>
+                            </div>
+                            <div class="itma-chart-card">
+                                <h6 class="mb-2">보관장소 그래프</h6>
+                                <div class="itma-donut-row">
+                                    <div class="itma-donut" id="itmaStorageDonut" aria-label="보관장소 그래프"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="itmaDurabilityModal" tabindex="-1" aria-labelledby="itmaDurabilityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-danger-subtle">
+                <h5 class="modal-title" id="itmaDurabilityModalLabel"><i class="bi bi-exclamation-diamond"></i> 내구연한 알람 </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row row-cols-1 row-cols-md-5 g-2 mb-3">
+                    <div class="col"><label class="form-label small mb-1">1차 기준</label><input id="itmaDurabilityYear3" type="number" min="1" class="form-control form-control-sm" value="3"></div>
+                    <div class="col"><label class="form-label small mb-1">2차 기준</label><input id="itmaDurabilityYear5" type="number" min="1" class="form-control form-control-sm" value="5"></div>
+                    <div class="col"><label class="form-label small mb-1">3차 기준</label><input id="itmaDurabilityYear7" type="number" min="1" class="form-control form-control-sm" value="7"></div>
+                    <div class="col"><label class="form-label small mb-1">4차 기준</label><input id="itmaDurabilityYear10" type="number" min="1" class="form-control form-control-sm" value="10"></div>
+                    <div class="col d-flex align-items-end">
+                        <button type="button" id="btnItmaDurabilityApply" class="btn btn-sm btn-danger w-100">적용</button>
+                    </div>
+                </div>
+
+                <div id="itmaDurabilitySummary" class="small text-muted mb-2"></div>
+                <input id="itmaDurabilitySearch" type="text" class="form-control form-control-sm mb-2" placeholder="내구연한 항목 검색 (제조사, 품명, 시리얼, 제조년월, 납품년월)">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0">
+                        <thead><tr><th>제조사</th><th>품명</th><th>시리얼</th><th>기준년월</th><th class="text-end">내구연한(년)</th><th class="text-end">사용기간</th><th class="text-end">지난기간</th></tr></thead>
+                        <tbody id="itmaDurabilityBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer justify-content-between">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnItmaDurabilitySnooze1d">오늘 하루 이 창을 열지 않음</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnItmaDurabilitySnooze7d">일주일간 이 창을 열지 않음</button>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="itmaHistoryModal" tabindex="-1" aria-labelledby="itmaHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable itma-history-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary-subtle">
+                <h5 class="modal-title" id="itmaHistoryModalLabel"><i class="bi bi-clock-history"></i> ITMA 변경이력 관리</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small text-muted">변경/삭제 이력을 확인하고 원복할 수 있습니다.</div>
+                    <button type="button" id="btnItmaHistoryRefresh" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise"></i> 새로고침
+                    </button>
+                </div>
+
+                <ul class="nav nav-tabs" id="itmaHistoryTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="itmaHistoryChangedTab" data-bs-toggle="tab" data-bs-target="#itmaHistoryChangedPane" type="button" role="tab">변경 이력</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="itmaHistoryDeletedTab" data-bs-toggle="tab" data-bs-target="#itmaHistoryDeletedPane" type="button" role="tab">삭제 이력</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content border border-top-0 rounded-bottom p-2">
+                    <div class="tab-pane fade show active" id="itmaHistoryChangedPane" role="tabpanel">
+                        <input id="itmaHistoryChangedSearch" type="text" class="form-control form-control-sm mb-2" placeholder="변경 이력 검색 (자산번호, 품명, 변경컬럼, 변경전, 변경후, 수정자)">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped mb-0 itma-history-table itma-history-changed-table">
+                                <thead><tr><th>시점</th><th>유형</th><th>자산번호</th><th>품명</th><th>변경컬럼</th><th>변경전</th><th>변경후</th><th>수정자</th><th class="text-center">원복</th></tr></thead>
+                                <tbody id="itmaHistoryChangedBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="itmaHistoryDeletedPane" role="tabpanel">
+                        <input id="itmaHistoryDeletedSearch" type="text" class="form-control form-control-sm mb-2" placeholder="삭제 이력 검색 (자산번호, 제조사, 품명, 시리얼, 삭제자)">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped mb-0 itma-history-table itma-history-deleted-table">
+                                <thead><tr><th>삭제시점</th><th>자산번호</th><th>제조사</th><th>품명</th><th>시리얼</th><th>삭제자</th><th class="text-center">원복</th></tr></thead>
+                                <tbody id="itmaHistoryDeletedBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="itmaAssetDetailModal" tabindex="-1" aria-labelledby="itmaAssetDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info-subtle">
+                <h5 class="modal-title" id="itmaAssetDetailModalLabel"><i class="bi bi-card-list"></i> PC/프린터 상세 정보</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="itma-detail-summary mb-3" id="itmaAssetDetailTarget">-</div>
+                <div class="itma-detail-feedback alert d-none" id="itmaAssetDetailFeedback" role="status" aria-live="polite"></div>
+                <div class="itma-detail-layout">
+                    <aside class="itma-detail-sidebar">
+                        <div class="nav flex-column nav-pills itma-detail-nav" id="itmaAssetDetailTabs" role="tablist" aria-orientation="vertical">
+                            <button class="nav-link active" id="itmaDetailTabEquipment" data-bs-toggle="pill" data-bs-target="#itmaDetailPaneEquipment" type="button" role="tab" aria-controls="itmaDetailPaneEquipment" aria-selected="true"><span class="itma-detail-tab-main"><i class="bi bi-card-list" aria-hidden="true"></i><span class="itma-detail-tab-label">장비내용</span></span><span class="itma-detail-tab-badge d-none" aria-label="항목 수"></span></button>
+                            <button class="nav-link" id="itmaDetailTabStatus" data-bs-toggle="pill" data-bs-target="#itmaDetailPaneStatus" type="button" role="tab" aria-controls="itmaDetailPaneStatus" aria-selected="false"><span class="itma-detail-tab-main"><i class="bi bi-activity" aria-hidden="true"></i><span class="itma-detail-tab-label">장비상태</span></span><span class="itma-detail-tab-badge d-none" aria-label="항목 수"></span></button>
+                            <button class="nav-link" id="itmaDetailTabHistory" data-bs-toggle="pill" data-bs-target="#itmaDetailPaneHistory" type="button" role="tab" aria-controls="itmaDetailPaneHistory" aria-selected="false"><span class="itma-detail-tab-main"><i class="bi bi-clock-history" aria-hidden="true"></i><span class="itma-detail-tab-label">변경이력</span></span><span class="itma-detail-tab-badge d-none" aria-label="항목 수"></span></button>
+                            <button class="nav-link" id="itmaDetailTabDelivery" data-bs-toggle="pill" data-bs-target="#itmaDetailPaneDelivery" type="button" role="tab" aria-controls="itmaDetailPaneDelivery" aria-selected="false"><span class="itma-detail-tab-main"><i class="bi bi-tools" aria-hidden="true"></i><span class="itma-detail-tab-label">유지보수</span></span><span class="itma-detail-tab-badge d-none" aria-label="항목 수"></span></button>
+                            <button class="nav-link" id="itmaDetailTabDurability" data-bs-toggle="pill" data-bs-target="#itmaDetailPaneDurability" type="button" role="tab" aria-controls="itmaDetailPaneDurability" aria-selected="false"><span class="itma-detail-tab-main"><i class="bi bi-calendar-check" aria-hidden="true"></i><span class="itma-detail-tab-label">내구연한</span></span><span class="itma-detail-tab-badge d-none" aria-label="상태"></span></button>
+                            <button class="nav-link" id="itmaDetailTabSecurity" data-bs-toggle="pill" data-bs-target="#itmaDetailPaneSecurity" type="button" role="tab" aria-controls="itmaDetailPaneSecurity" aria-selected="false"><span class="itma-detail-tab-main"><i class="bi bi-shield-lock" aria-hidden="true"></i><span class="itma-detail-tab-label">보안인증</span></span><span class="itma-detail-tab-badge d-none" aria-label="항목 수"></span></button>
+                        </div>
+                    </aside>
+
+                    <div class="tab-content itma-detail-content" id="itmaAssetDetailTabContent">
+                        <section class="tab-pane fade show active itma-detail-pane" id="itmaDetailPaneEquipment" role="tabpanel" aria-labelledby="itmaDetailTabEquipment" tabindex="0">
+                            <div id="itmaDetailEquipmentSection">
+                                <div class="card itma-equipment-card mb-3">
+                                    <!-- 1.  그룹/ 사용자 상세 -->
+                                    <div class="card-header d-flex align-items-center gap-2">
+                                        <i class="bi bi-people"></i>
+                                        <span>그룹/사용자 상세</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-3 itma-detail-user-row">
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">그룹</label>
+                                                <input class="form-control form-control-sm itma-detail-field" data-field="used_group">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">사용자</label>
+                                                <input class="form-control form-control-sm itma-detail-field" data-field="used_user">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">직급</label>
+                                                <input class="form-control form-control-sm itma-detail-field" data-field="user_position">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 2. 네트워크 상세 -->
+                                    <div class="card-header d-flex align-items-center gap-2 border-top">
+                                        <i class="bi bi-hdd-network"></i>
+                                        <span>네트워크 상세</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-3 itma-detail-equipment-main">
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">네트워크 구분</label>
+                                                <input class="form-control form-control-sm itma-detail-field"
+                                                    data-field="network_type"
+                                                    placeholder="업무망/인터넷망/방산망">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">IP/Subnet</label>
+                                                <input class="form-control form-control-sm itma-detail-field"
+                                                    data-field="ip_address"
+                                                    placeholder="192.168.x.x/24">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">Mac address</label>
+                                                <input class="form-control form-control-sm itma-detail-field"
+                                                    data-field="mac_address"
+                                                    placeholder="00:11:22:33:44:55">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 3. 장비 상세 -->
+                                    <div class="card-header d-flex align-items-center gap-2 border-top">
+                                        <i class="bi bi-cpu"></i>
+                                        <span>장비 상세</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-3 itma-detail-equipment-main">
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">장비명</label>
+                                                <input class="form-control form-control-sm itma-detail-field"
+                                                    data-field="hostname">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">OS/Version</label>
+                                                <input class="form-control form-control-sm itma-detail-field"
+                                                    data-field="os_version">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label mb-1">Serial Number</label>
+                                                <input class="form-control form-control-sm itma-detail-field"
+                                                    data-field="serial_number">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <div class="mt-3 itma-spec-row d-none" id="itmaSpecFormSection">
+                                <div class="itma-spec-toolbar mb-2 d-flex justify-content-between align-items-center">
+                                    <label class="itma-spec-toolbar-title form-label mb-0" for="itmaSpecFormSelect">상세 스펙 폼</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <select id="itmaSpecFormSelect" class="form-select form-select-sm">
+                                            <option value="">저장된 스펙 내역</option>
+                                        </select>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary itma-spec-action-btn" id="btnItmaSpecFormApply" title="선택한 스펙 폼 불러오기">
+                                            <i class="bi bi-box-arrow-in-down" aria-hidden="true"></i><span>불러오기</span>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary itma-spec-action-btn" id="btnItmaSpecFormSave" title="현재 입력값으로 스펙 폼 저장">
+                                            <i class="bi bi-save" aria-hidden="true"></i><span>저장</span>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-primary itma-spec-action-btn" id="btnItmaSpecRowAdd" title="스펙 행 추가">
+                                            <i class="bi bi-plus-lg" aria-hidden="true"></i><span>추가</span>
+                                        </button>
+                                    </div>
+                                </div>
+            
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 30%;">제목</th>
+                                                <th>내용</th>
+                                                <th style="width: 72px;" class="text-center">삭제</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itmaSpecItemsBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            </div>
+                            <div id="itmaDetailSoftwareSection" class="d-none">
+                                <div class="row g-2 align-items-end mb-2">
+                                    <div class="col-md-3"><label class="form-label mb-1">소프트웨어명</label><input class="form-control form-control-sm" id="itmaDetailSoftwareName"></div>
+                                    <div class="col-md-2"><label class="form-label mb-1">버전</label><input class="form-control form-control-sm" id="itmaDetailSoftwareVersion"></div>
+                                    <div class="col-md-2"><label class="form-label mb-1">설치일</label><input type="date" class="form-control form-control-sm" id="itmaDetailSoftwareInstallDate"></div>
+                                    <div class="col-md-2"><label class="form-label mb-1">만료일</label><input type="date" class="form-control form-control-sm" id="itmaDetailSoftwareExpiryDate"></div>
+                                    <div class="col-md-2"><label class="form-label mb-1">수량</label><input type="number" min="0" class="form-control form-control-sm" id="itmaDetailSoftwareInstalledQuantity"></div>
+                                    <div class="col-md-1 d-grid"><button type="button" class="btn btn-sm btn-outline-primary" id="btnItmaDetailAddSoftware">추가</button></div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-6"><label class="form-label mb-1">네트워크 구분</label><input class="form-control form-control-sm" id="itmaDetailSoftwareDeploymentTarget" placeholder="업무망/인터넷망/방산망"></div>
+                                    <div class="col-md-6"><label class="form-label mb-1">비고</label><input class="form-control form-control-sm" id="itmaDetailSoftwareChangeNote"></div>
+                                </div>
+                                <div class="table-responsive mb-2">
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <thead class="table-light"><tr><th>소프트웨어명</th><th style="width:110px;">버전</th><th style="width:120px;">설치일</th><th style="width:120px;">만료일</th><th style="width:80px;">수량</th><th>네트워크 구분</th><th>비고</th><th style="width:70px;">삭제</th></tr></thead>
+                                        <tbody id="itmaDetailSoftwareBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div id="itmaDetailLicenseSection" class="d-none">
+                                <div class="row g-2 align-items-end mb-2">
+                                    <div class="col-md-3"><label class="form-label mb-1">라이선스명</label><input class="form-control form-control-sm" id="itmaDetailLicenseName"></div>
+                                    <div class="col-md-2"><label class="form-label mb-1">버전</label><input class="form-control form-control-sm" id="itmaDetailLicenseVersion"></div>
+                                    <div class="col-md-2"><label class="form-label mb-1">설치일</label><input type="date" class="form-control form-control-sm" id="itmaDetailLicenseInstallDate"></div>
+                                    <div class="col-md-2"><label class="form-label mb-1">수량</label><input type="number" min="0" class="form-control form-control-sm" id="itmaDetailLicenseQuantity"></div>
+                                    <div class="col-md-2"><label class="form-label mb-1">만료일</label><input type="date" class="form-control form-control-sm" id="itmaDetailLicenseExpiryDate"></div>
+                                    <div class="col-md-1 d-grid"><button type="button" class="btn btn-sm btn-outline-primary" id="btnItmaDetailAddLicense">추가</button></div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-6"><label class="form-label mb-1">네트워크 구분</label><input class="form-control form-control-sm" id="itmaDetailLicenseNetworkType" placeholder="업무망/인터넷망/방산망"></div>
+                                    <div class="col-md-6"><label class="form-label mb-1">비고</label><input class="form-control form-control-sm" id="itmaDetailLicenseChangeNote"></div>
+                                </div>
+                                <div class="table-responsive mb-2">
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <thead class="table-light"><tr><th>라이선스명</th><th style="width:110px;">버전</th><th style="width:120px;">설치일</th><th style="width:120px;">만료일</th><th style="width:80px;">수량</th><th>네트워크 구분</th><th>비고</th><th style="width:70px;">삭제</th></tr></thead>
+                                        <tbody id="itmaDetailLicenseBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+                        <section class="tab-pane fade itma-detail-pane" id="itmaDetailPaneStatus" role="tabpanel" aria-labelledby="itmaDetailTabStatus" tabindex="0">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-3"><label class="form-label mb-1">현재장비 상태</label><input class="form-control form-control-sm itma-detail-field now_color" data-field="equipment_status" readonly></div>
+                                <div class="col-md-3"><label class="form-label mb-1">상태일자</label><input type="date" class="form-control form-control-sm itma-detail-field now_color" data-field="equipment_status_date" readonly></div>
+                            </div>
+                            <div class="row g-2 align-items-end mt-2 mb-2">
+                                <div class="col-md-3"><label class="form-label mb-1">상태일자</label><input type="date" class="form-control form-control-sm" id="itmaDetailEquipmentStatusDateInput"></div>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">장비상태</label>
+                                    <select class="form-select form-select-sm" id="itmaDetailEquipmentStatusInput">
+                                        <option value="">선택</option>
+                                        <option value="정상">정상</option>
+                                        <option value="사용">사용</option>
+                                        <option value="미사용">미사용</option>
+                                        <option value="장애">장애</option>
+                                        <option value="교체">교체</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-1 d-grid"><button type="button" class="btn btn-sm btn-outline-primary" id="btnItmaDetailAddEquipment">추가</button></div>
+                            </div>
+                            <div class="table-responsive mb-2">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="table-light"><tr><th style="width: 140px;">상태일자</th><th>장비상태</th><th style="width: 70px;">삭제</th></tr></thead>
+                                    <tbody id="itmaDetailEquipmentBody"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section class="tab-pane fade itma-detail-pane" id="itmaDetailPaneSecurity" role="tabpanel" aria-labelledby="itmaDetailTabSecurity" tabindex="0">
+                        <div class="row g-2 align-items-end mb-2">
+                            <div class="col">
+                                <label class="form-label mb-1">현재 사전인증유형</label>
+                                <input class="form-control form-control-sm itma-detail-field now_color" data-field="pre_auth_type" readonly>
+                            </div>
+                            <div class="col">
+                                <label class="form-label mb-1">현재 인증완료여부</label>
+                                <input class="form-control form-control-sm itma-detail-field now_color" data-field="auth_completion_status" readonly>
+                            </div>
+                            <div class="col">
+                                <label class="form-label mb-1">현재 발급(인증)번호</label>
+                                <input class="form-control form-control-sm itma-detail-field now_color" data-field="auth_number" readonly>
+                            </div>
+                            <div class="col">
+                                <label class="form-label mb-1">현재 발급(인증)일</label>
+                                <input type="date" class="form-control form-control-sm itma-detail-field now_color" data-field="auth_date" readonly>
+                            </div>
+                            <div class="col">
+                                <label class="form-label mb-1">현재 암호화검증번호</label>
+                                <input class="form-control form-control-sm itma-detail-field now_color" data-field="crypto_verification_number" readonly>
+                            </div>
+                        </div>
+                        <div class="card itma-security-card mb-3 mt-3">
+                            <!-- 헤더 -->
+                            <div class="card-header d-flex align-items-center gap-2">
+                                <i class="bi bi-shield-check"></i>
+                                <span>보안 인증 정보</span>
+                            </div>
+                            <!-- 입력 영역 -->
+                            <div class="card-body">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-2">
+                                        <label class="form-label mb-1">날짜</label>
+                                        <input type="date" class="form-control form-control-sm" id="itmaDetailSecurityChangeDate">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label mb-1">사전인증유형</label>
+                                        <select class="form-select form-select-sm" id="itmaDetailSecurityPreAuthType">
+                                            <option value="">선택</option>
+                                            <option value="보안기능확인서">보안기능확인서</option>
+                                            <option value="국내CC인증서">국내CC인증서</option>
+                                            <option value="국외CC인증서">국외CC인증서</option>
+                                            <option value="성능평가">성능평가</option>
+                                            <option value="취약점확인서">취약점확인서</option>
+                                            <option value="기타">기타</option>
+                                            <option value="없음">없음</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label mb-1">인증완료여부</label>
+                                        <select class="form-select form-select-sm" id="itmaDetailSecurityCompletionStatus">
+                                            <option value="">선택</option>
+                                            <option value="인증조건 없음">인증조건 없음</option>
+                                            <option value="시험진행중">시험진행중</option>
+                                            <option value="발급(인증) 완료">발급(인증) 완료</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label mb-1">발급(인증)번호</label>
+                                        <input class="form-control form-control-sm" id="itmaDetailSecurityAuthNumber">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label mb-1">발급(인증)일</label>
+                                        <input type="date" class="form-control form-control-sm" id="itmaDetailSecurityAuthDate">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label mb-1">암호화검증번호</label>
+                                        <input class="form-control form-control-sm" id="itmaDetailSecurityCryptoNumber">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 버튼 영역 -->
+                            <div class="card-footer d-flex justify-content-end align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnItmaDetailAddSecurity">
+                                    + 항목 추가
+                                </button>
+                            </div>
+                        </div>
+                            <div class="table-responsive mb-2">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="table-light"><tr><th style="width: 120px;">날짜</th><th style="width: 150px;">사전인증유형</th><th style="width: 130px;">인증완료여부</th><th style="width: 160px;">발급(인증)번호</th><th style="width: 120px;">발급(인증)일</th><th>암호화검증번호</th><th style="width: 70px;">삭제</th></tr></thead>
+                                    <tbody id="itmaDetailSecurityBody"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section class="tab-pane fade itma-detail-pane" id="itmaDetailPaneHistory" role="tabpanel" aria-labelledby="itmaDetailTabHistory" tabindex="0">
+                            <div class="row g-2 align-items-end mb-2">
+                                <div class="col-md-3"><label class="form-label mb-1">날짜</label><input type="date" class="form-control form-control-sm" id="itmaDetailChangeDate"></div>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">구분</label>
+                                    <select class="form-select form-select-sm" id="itmaDetailChangeType">
+                                        <option value="">선택</option>
+                                        <option value="설정변경">설정변경</option>
+                                        <option value="구성변경">구성변경</option>
+                                        <option value="펌웨어변경">펌웨어변경</option>
+                                        <option value="장비변경">장비변경</option>
+                                        <option value="장애">장애</option>
+                                        <option value="기타">기타</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4"><label class="form-label mb-1">내역</label><input class="form-control form-control-sm" id="itmaDetailChangeNote" placeholder="변경 내역"></div>
+                                <div class="col-md-2 d-grid"><button type="button" class="btn btn-sm btn-outline-primary" id="btnItmaDetailAddChange"> 추가</button></div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="table-light"><tr><th style="width: 130px;">날짜</th><th style="width: 160px;">구분</th><th>내역</th><th style="width: 70px;">삭제</th></tr></thead>
+                                    <tbody id="itmaDetailChangeBody"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section class="tab-pane fade itma-detail-pane" id="itmaDetailPaneDelivery" role="tabpanel" aria-labelledby="itmaDetailTabDelivery" tabindex="0">
+                            <div class="row g-2">
+                                <div class="col-md-4"><label class="form-label mb-1">현재 유지보수 계약일</label><input type="date" class="form-control form-control-sm now_color" id="itmaDetailCurrentMaintenanceStartDate" readonly></div>
+                                <div class="col-md-4"><label class="form-label mb-1">현재 개월</label><input type="number" min="0" class="form-control form-control-sm now_color" id="itmaDetailCurrentMaintenanceMonths" readonly></div>
+                                <div class="col-md-4"><label class="form-label mb-1">현재 종료일</label><input type="date" class="form-control form-control-sm now_color" id="itmaDetailCurrentMaintenanceEndDate" readonly></div>
+                            </div>
+                            <div class="row g-2 mt-2">
+                                <div class="col-md-3"><label class="form-label mb-1">현재 납품업체</label><input class="form-control form-control-sm now_color" id="itmaDetailCurrentVendorName" readonly></div>
+                                <div class="col-md-3"><label class="form-label mb-1">현재 담당자</label><input class="form-control form-control-sm now_color" id="itmaDetailCurrentVendorContact" readonly></div>
+                                <div class="col-md-3"><label class="form-label mb-1">현재 연락처</label><input class="form-control form-control-sm now_color" id="itmaDetailCurrentVendorPhone" readonly></div>
+                                <div class="col-md-3"><label class="form-label mb-1">현재 메일</label><input class="form-control form-control-sm now_color" id="itmaDetailCurrentVendorMail" readonly></div>
+                            </div>
+                        <div class="card itma-delivery-card mb-3 mt-3">
+                            <!-- 헤더 -->
+                            <div class="card-header d-flex align-items-center gap-2">
+                                <i class="bi bi-card-list"></i>
+                                <span>계약 정보</span>
+                            </div>
+                            <!-- 계약 정보 -->
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">계약일</label>
+                                        <input type="date" class="form-control form-control-sm" id="itmaDetailDeliveryDate">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">유지보수 시작일</label>
+                                        <input type="date" class="form-control form-control-sm" id="itmaDetailMaintenanceStartDate">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">개월</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" min="0" class="form-control form-control-sm" id="itmaDetailMaintenanceMonths">
+                                            <span class="input-group-text">개월</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">종료일</label>
+                                        <input type="date" class="form-control form-control-sm" id="itmaDetailMaintenanceEndDate" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 업체 정보 -->
+                            <div class="card-header d-flex align-items-center gap-2 border-top">
+                                <i class="bi bi-person"></i>
+                                <span>업체 담당자</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">업체</label>
+                                        <input class="form-control form-control-sm" id="itmaDetailDeliveryVendorName">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">담당자</label>
+                                        <input class="form-control form-control-sm" id="itmaDetailDeliveryVendorContact">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">연락처</label>
+                                        <input class="form-control form-control-sm" id="itmaDetailDeliveryVendorPhone">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">메일</label>
+                                        <input class="form-control form-control-sm" id="itmaDetailDeliveryVendormail">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 버튼 영역 -->
+                            <div class="card-footer d-flex justify-content-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnItmaDetailAddDelivery">
+                                    + 항목 추가
+                                </button>
+                            </div>
+                        </div>
+                            <div class="table-responsive mb-2">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="table-light"><tr><th style="width: 120px;">계약일</th><th style="width: 130px;">업체</th><th style="width: 120px;">담당자</th><th style="width: 120px;">연락처</th><th style="width: 150px;">메일</th><th style="width: 130px;">시작년월</th><th style="width: 80px;">개월</th><th style="width: 120px;">종료일</th><th style="width: 70px;">삭제</th></tr></thead>
+                                    <tbody id="itmaDetailDeliveryBody"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section class="tab-pane fade itma-detail-pane" id="itmaDetailPaneDurability" role="tabpanel" aria-labelledby="itmaDetailTabDurability" tabindex="0">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1">제조년월(연동)</label>
+                                    <input type="text" class="form-control form-control-sm now_color" id="itmaDetailManufactureMonthRef" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1">납품년월</label>
+                                    <input type="month" class="form-control form-control-sm itma-detail-field" data-field="delivery_month">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1">장비 내구연한(년)</label>
+                                    <input type="number" min="1" class="form-control form-control-sm itma-detail-field" data-field="durability_years" placeholder="예: 5">
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-2">내구연한 계산은 납품년월 우선, 미입력 시 제조년월 기준으로 처리됩니다.</div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <small class="text-muted" id="itmaAssetDetailUpdatedInfo">-</small>
+                <small class="text-muted d-none" id="itmaAssetSoftwareUpdatedInfo">-</small>
+                <small class="text-muted d-none" id="itmaAssetLicenseUpdatedInfo">-</small>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" id="btnItmaAssetDetailSave"><i class="bi bi-save"></i> 저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+window.itmaInitialPermissions = {{ itma_permissions|tojson|safe if itma_permissions else '{}' }};
+</script>
+<script src="{{ url_for('static', filename='js/itma-handler.js') }}?v=20261112a"></script>
+{% endblock %}

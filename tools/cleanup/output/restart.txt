@@ -1,0 +1,37 @@
+===== restart =====
+ Container itma_nginx Restarting 
+ Container flask_ITMA_WEB Restarting 
+ Container flask_ITMA_WEB Started 
+ Container itma_nginx Started 
+exit_code=0
+===== status =====
+NAME             IMAGE                      COMMAND                   SERVICE   CREATED       STATUS                 PORTS
+flask_ITMA_WEB   project_flask_itma-web     "gunicorn --bind 0.0…"   web       2 hours ago   Up 11 seconds          5000/tcp
+flask_ITMA_db    postgres:15-alpine         "docker-entrypoint.s…"   db        2 days ago    Up 2 hours (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+itma_nginx       project_flask_itma-nginx   "/docker-entrypoint.…"   nginx     2 hours ago   Up 8 seconds           0.0.0.0:30080->80/tcp, [::]:30080->80/tcp, 0.0.0.0:30443->443/tcp, [::]:30443->443/tcp
+===== web log tail =====
+172.19.0.3 - - [06/Nov/2026:10:45:35 +0900] "GET /static/js/scroll_hint.js HTTP/1.1" 304 0 "https://localhost:30443/itma/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"
+172.19.0.3 - - [06/Nov/2026:10:45:35 +0900] "GET /static/js/base_common.js HTTP/1.1" 304 0 "https://localhost:30443/itma/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"
+172.19.0.3 - - [06/Nov/2026:10:45:35 +0900] "GET /static/js/itma-handler.js?v=20261007b HTTP/1.1" 304 0 "https://localhost:30443/itma/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"
+172.19.0.3 - - [06/Nov/2026:10:45:35 +0900] "GET /itma/server-time HTTP/1.1" 200 53 "https://localhost:30443/itma/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"
+172.19.0.3 - - [06/Nov/2026:10:45:35 +0900] "GET /itma/categories HTTP/1.1" 200 1429 "https://localhost:30443/itma/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"
+172.19.0.3 - - [06/Nov/2026:10:45:35 +0900] "GET /itma/assets HTTP/1.1" 200 4792 "https://localhost:30443/itma/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"
+[2026-11-06 10:45:59 +0900] [1] [INFO] Handling signal: term
+[2026-11-06 10:45:59 +0900] [10] [INFO] Worker exiting (pid: 10)
+[2026-11-06 10:45:59 +0900] [9] [INFO] Worker exiting (pid: 9)
+[2026-11-06 10:45:59 +0900] [7] [INFO] Worker exiting (pid: 7)
+[2026-11-06 10:45:59 +0900] [8] [INFO] Worker exiting (pid: 8)
+[2026-11-06 10:45:59 +0900] [1] [INFO] Shutting down: Master
+[2026-11-06 10:46:00 +0900] [1] [INFO] Starting gunicorn 26.2.0
+[2026-11-06 10:46:00 +0900] [1] [INFO] Listening at: http://0.0.0.0:5000 (1)
+[2026-11-06 10:46:00 +0900] [1] [INFO] Using worker: sync
+[2026-11-06 10:46:00 +0900] [7] [INFO] Booting worker with pid: 7
+[2026-11-06 10:46:00 +0900] [8] [INFO] Booting worker with pid: 8
+[2026-11-06 10:46:00 +0900] [9] [INFO] Booting worker with pid: 9
+[2026-11-06 10:46:00 +0900] [10] [INFO] Booting worker with pid: 10
+[2026-11-06 10:46:00 +0900] [1] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl
+[INFO] Email settings loaded: :587
+[INFO] Email settings loaded: :587
+[INFO] Email settings loaded: :587
+[INFO] Email settings loaded: :587
+172.19.0.3 - - [06/Nov/2026:10:46:05 +0900] "GET /itma/server-time HTTP/1.1" 200 53 "https://localhost:30443/itma/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"

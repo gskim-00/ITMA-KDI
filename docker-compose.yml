@@ -1,0 +1,68 @@
+### docker-compose.yml
+### Flask + PostgreSQL + Nginx(HTTPS termination)
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ${DB_CONTAINER_NAME:-postgres_db}
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER:-jininfra}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-netkti00}
+      - POSTGRES_DB=${DB_NAME:-project_db}
+      - TZ=Asia/Seoul         
+      - PGTZ=Asia/Seoul
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-jininfra} -d ${DB_NAME:-project_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  web:
+    build: .
+    container_name: ${WEB_CONTAINER_NAME:-ITMA_WEB}
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-jininfra}:${DB_PASSWORD:-netkti00}@${DB_HOST:-db}:${DB_PORT:-5432}/${DB_NAME:-project_db}
+      - FLASK_ENV=${FLASK_ENV:-development}
+      - TZ=Asia/Seoul
+    volumes:
+      - .:/app
+    expose:
+      - "5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    build:
+      context: .
+      dockerfile: infra/nginx/Dockerfile
+    container_name: itma_nginx
+    restart: always
+    environment:
+      - TLS_MODE=${TLS_MODE:-external}
+      - SERVER_NAME=${NGINX_SERVER_NAME:-_}
+      - EXTERNAL_CERT_PATH=/etc/nginx/ssl/fullchain.pem
+      - EXTERNAL_KEY_PATH=/etc/nginx/ssl/privkey.pem
+      - INTERNAL_CA_CN=${INTERNAL_CA_CN:-ITMA Internal CA}
+      - INTERNAL_CA_DAYS=${INTERNAL_CA_DAYS:-3650}
+      - INTERNAL_CERT_CN=${INTERNAL_CERT_CN:-itma.internal}
+      - INTERNAL_CERT_DAYS=${INTERNAL_CERT_DAYS:-825}
+    ports:
+      - "${WEB_HTTP_PORT:-30080}:80"
+      - "${WEB_HTTPS_PORT:-30443}:443"
+    volumes:
+      - ./infra/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:

@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}ONE ITMA{% endblock %}
+
+{% block navbar_title %}
+ONE ITMA - 관리자 페이지
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20261007b">
+{% endblock %}
+
+{% block sidebar %}
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <i class="bi bi-list-ul"></i> 메뉴
+    </div>
+
+    <!-- 1. 계정 관리 Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">
+            <i class="bi bi-people-fill"></i> 계정 관리
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item">
+                <a href="#user-list" class="sidebar-menu-link menu-link active" data-section="user-list">
+                    <i class="bi bi-people"></i>
+                    <span>사용자 현황</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#add-user" class="sidebar-menu-link menu-link" data-section="add-user">
+                    <i class="bi bi-person-plus"></i>
+                    <span>신규 계정 등록</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#group-permissions" class="sidebar-menu-link menu-link" data-section="group-permissions">
+                    <i class="bi bi-diagram-3"></i>
+                    <span>그룹/권한 설정</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#spec-forms" class="sidebar-menu-link menu-link" data-section="spec-forms">
+                    <i class="bi bi-card-checklist"></i>
+                    <span>카테고리 관리</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#admin-profile" class="sidebar-menu-link menu-link" data-section="admin-profile">
+                    <i class="bi bi-person-badge"></i>
+                    <span>내 정보 변경</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 2. 시스템 관리 Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">
+            <i class="bi bi-gear-wide-connected"></i> 시스템 관리
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item">
+                <a href="#login-page-settings" class="sidebar-menu-link menu-link" data-section="login-page-settings">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>로그인 화면 설정</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#system-status" class="sidebar-menu-link menu-link" data-section="system-status">
+                    <i class="bi bi-heart-pulse"></i>
+                    <span>시스템 상태</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#db-backup" class="sidebar-menu-link menu-link" data-section="db-backup">
+                    <i class="bi bi-database-fill-down"></i>
+                    <span>데이터베이스 백업</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#session-management" class="sidebar-menu-link menu-link" data-section="session-management">
+                    <i class="bi bi-clock-history"></i>
+                    <span>세션 관리</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#audit-log" class="sidebar-menu-link menu-link" data-section="audit-log">
+                    <i class="bi bi-file-text"></i>
+                    <span>감사 로그</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 3. 모니터링 Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">
+            <i class="bi bi-graph-up"></i> 모니터링
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item">
+                <a href="#access-log" class="sidebar-menu-link menu-link" data-section="access-log">
+                    <i class="bi bi-clipboard-check"></i>
+                    <span>접속 로그</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#statistics" class="sidebar-menu-link menu-link" data-section="statistics">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>통계</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 4. 보안 Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">
+            <i class="bi bi-shield-lock"></i> 보안
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item">
+                <a href="#security-settings" class="sidebar-menu-link menu-link" data-section="security-settings">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <span>보안 설정</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 5. 웹서버 Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">
+            <i class="bi bi-server"></i> 웹서버
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item">
+                <a href="#web-server" class="sidebar-menu-link menu-link" data-section="web-server">
+                    <i class="bi bi-hdd-network"></i>
+                    <span>웹서버 설정</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 6. 이메일 관리 Section -->
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">
+            <i class="bi bi-envelope-fill"></i> 이메일 관리
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item">
+                <a href="#email-settings" class="sidebar-menu-link menu-link" data-section="email-settings">
+                    <i class="bi bi-gear"></i>
+                    <span>이메일 설정</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#send-email" class="sidebar-menu-link menu-link" data-section="send-email">
+                    <i class="bi bi-send"></i>
+                    <span>이메일 발송</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</aside>
+{% endblock %}
+
+{% block content %}
+<!-- Dashboard Section -->
+<div class="dashboard-section" id="dashboard-section">
+    <h2 class="section-title">
+        <i class="bi bi-speedometer2"></i> 관리자 대시보드
+    </h2>
+
+    <!-- Stats Cards -->
+    <div class="stats-cards">
+        <div class="stat-card primary">
+            <div class="stat-card-label">
+                <i class="bi bi-people-fill"></i> 등록된 사용자
+            </div>
+            <div class="stat-card-value">
+                {% if users %}{{ users|length }}{% else %}0{% endif %}
+                <span class="stat-card-unit">명</span>
+            </div>
+            <div class="stat-card-actions">
+                <a href="#user-list" class="btn btn-sm btn-outline-primary menu-link" data-section="user-list">보기</a>
+                <a href="#add-user" class="btn btn-sm btn-primary menu-link" data-section="add-user">추가</a>
+            </div>
+        </div>
+
+        <div class="stat-card success">
+            <div class="stat-card-label">
+                <i class="bi bi-envelope-fill"></i> 이메일 발송 건수
+            </div>
+            <div class="stat-card-value">
+                {{ email_count if email_count else 0 }}
+                <span class="stat-card-unit">건</span>
+            </div>
+            <div class="stat-card-actions">
+                <a href="#send-email" class="btn btn-sm btn-outline-success menu-link" data-section="send-email">발송</a>
+            </div>
+        </div>
+
+        <div class="stat-card info">
+            <div class="stat-card-label">
+                <i class="bi bi-clock-history"></i> 최근 접속 (24h)
+            </div>
+            <div class="stat-card-value">
+                {{ login_24h if login_24h else 0 }}
+                <span class="stat-card-unit">건</span>
+            </div>
+            <div class="stat-card-actions">
+                <a href="#access-log" class="btn btn-sm btn-outline-info menu-link" data-section="access-log">보기</a>
+            </div>
+        </div>
+
+        <div class="stat-card danger">
+            <div class="stat-card-label">
+                <i class="bi bi-pc-display"></i> IT 자산관리 항목
+            </div>
+            <div class="stat-card-value">
+                {{ total_itma_assets if total_itma_assets else 0 }}
+                <span class="stat-card-unit">개</span>
+            </div>
+            <div class="stat-card-actions">
+                <a href="{{ url_for('itma.page') }}" class="btn btn-sm btn-outline-danger">보기</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h5>
+                <i class="bi bi-lightning"></i> 자주 사용하는 기능
+            </h5>
+        </div>
+        <div class="content-card-body">
+            <div class="quick-actions-grid">
+                <a href="#add-user" class="btn btn-primary btn-lg menu-link" data-section="add-user">
+                    <i class="bi bi-person-plus"></i> 신규 사용자 등록
+                </a>
+                <a href="#send-email" class="btn btn-info btn-lg menu-link" data-section="send-email">
+                    <i class="bi bi-envelope"></i> 이메일 발송
+                </a>
+                <a href="#access-log" class="btn btn-outline-secondary btn-lg menu-link" data-section="access-log">
+                    <i class="bi bi-clipboard-check"></i> 접속 로그 확인
+                </a>
+                <a href="#admin-profile" class="btn btn-outline-secondary btn-lg menu-link" data-section="admin-profile">
+                    <i class="bi bi-person-badge"></i> 계정 설정
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content" id="adminTabContent">
+    <!-- 관리자 계정 변경 -->
+    <div class="tab-pane" id="admin-profile" role="tabpanel">
+        {% include 'admin/sections/admin_profile.html' %}
+    </div>
+
+    <!-- 사용자 현황 -->
+    <div class="tab-pane active" id="user-list" role="tabpanel">
+        {% include 'admin/sections/user_list.html' %}
+    </div>
+
+    <!-- 신규 계정 등록 -->
+    <div class="tab-pane" id="add-user" role="tabpanel">
+        {% include 'admin/sections/add_user.html' %}
+    </div>
+
+    <div class="tab-pane" id="group-permissions" role="tabpanel">
+        {% include 'admin/sections/group_permissions.html' %}
+    </div>
+
+    <div class="tab-pane" id="spec-forms" role="tabpanel">
+        {% include 'admin/sections/spec_forms.html' %}
+    </div>
+
+    <!-- 최근 접속 로그 -->
+    <div class="tab-pane" id="access-log" role="tabpanel">
+        {% include 'admin/sections/access_log.html' %}
+    </div>
+
+    <!-- 통계 -->
+    <div class="tab-pane" id="statistics" role="tabpanel">
+        {% include 'admin/sections/statistics.html' %}
+    </div>
+
+    <!-- 이메일 설정 -->
+    <div class="tab-pane" id="email-settings" role="tabpanel">
+        {% include 'admin/sections/email_settings.html' %}
+    </div>
+
+    <!-- 이메일 발송 -->
+    <div class="tab-pane" id="send-email" role="tabpanel">
+        {% include 'admin/sections/send_email.html' %}
+    </div>
+
+    <!-- 보안 설정 -->
+    <div class="tab-pane" id="security-settings" role="tabpanel">
+        {% include 'admin/sections/security_settings.html' %}
+    </div>
+
+    <!-- 웹서버 설정 -->
+    <div class="tab-pane" id="web-server" role="tabpanel">
+        {% include 'admin/sections/web_server.html' %}
+    </div>
+
+    <!-- 데이터베이스 백업 -->
+    <div class="tab-pane" id="db-backup" role="tabpanel">
+        {% include 'admin/sections/db_backup.html' %}
+    </div>
+
+    <!-- 로그인 화면 설정 -->
+    <div class="tab-pane" id="login-page-settings" role="tabpanel">
+        {% include 'admin/sections/login_page_settings.html' %}
+    </div>
+
+    <!-- 시스템 상태 -->
+    <div class="tab-pane" id="system-status" role="tabpanel">
+        {% include 'admin/sections/system_status.html' %}
+    </div>
+
+    <!-- 감사 로그 -->
+    <div class="tab-pane" id="audit-log" role="tabpanel">
+        {% include 'admin/sections/audit_log.html' %}
+    </div>
+
+    <!-- 세션 관리 -->
+    <div class="tab-pane" id="session-management" role="tabpanel">
+        {% include 'admin/sections/session_management.html' %}
+    </div>
+</div>
+
+<!-- 사용자 편집 Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">사용자 정보 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editUserForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">사용자 ID</label>
+                        <input type="text" id="editUsername" class="form-control" autocomplete="username" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">이름</label>
+                        <input type="text" id="editRealName" class="form-control" autocomplete="name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">이메일</label>
+                        <input type="email" id="editEmail" class="form-control" autocomplete="email" placeholder="선택사항">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">새 비밀번호 <small class="text-muted">(변경하지 않으려면 비워두세요)</small></label>
+                        <input type="password" id="editPassword" class="form-control" autocomplete="new-password">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">새 비밀번호 확인</label>
+                        <input type="password" id="editPasswordConfirm" class="form-control" autocomplete="new-password">
+                    </div>
+                    <div class="mb-3">
+                         <label class="form-label">허용 IP</label>
+                            <textarea
+                                id="editAllowedIpList"
+                                class="form-control"
+                                rows="3"
+                                placeholder="선택사항 (예: 192.168.0.10/24)"
+                            ></textarea>
+                            <small class="text-muted">여러 개는 줄바꿈 또는 쉼표로 구분합니다.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+window.adminCsrfToken = "{{ csrf_token|default('', true) }}";
+
+// Auto-attach CSRF token for mutating /admin fetch requests.
+(function() {
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = function(input, init) {
+        const options = init ? { ...init } : {};
+        const method = String(options.method || 'GET').toUpperCase();
+        const url = typeof input === 'string'
+            ? input
+            : (input && typeof input.url === 'string' ? input.url : '');
+        const isAdminApi = url.startsWith('/admin/');
+        const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+
+        if (isAdminApi && isMutating) {
+            const headers = new Headers(options.headers || {});
+            if (!headers.has('X-CSRF-Token')) {
+                headers.set('X-CSRF-Token', window.adminCsrfToken || '');
+            }
+            options.headers = headers;
+        }
+        return originalFetch(input, options);
+    };
+})();
+</script>
+<script src="{{ url_for('static', filename='js/admin.js') }}?v=20261117a"></script>
+<script src="{{ url_for('static', filename='js/email-handler.js') }}"></script>
+<script src="{{ url_for('static', filename='js/template-handler.js') }}"></script>
+<script src="{{ url_for('static', filename='js/security-settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/login-page-settings.js') }}?v=20260914a"></script>
+<script src="{{ url_for('static', filename='js/user-manager.js') }}?v=20260703b"></script>
+<script src="{{ url_for('static', filename='js/group-permissions.js') }}"></script>
+<script src="{{ url_for('static', filename='js/spec-forms-admin.js') }}?v=20261007f"></script>
+<script src="{{ url_for('static', filename='js/db_backup.js') }}"></script>
+<script src="{{ url_for('static', filename='js/system_status.js') }}"></script>
+<script src="{{ url_for('static', filename='js/audit_log.js') }}"></script>
+<script src="{{ url_for('static', filename='js/session_management.js') }}"></script>
+<script src="{{ url_for('static', filename='js/access-log.js') }}"></script>
+{% endblock %}

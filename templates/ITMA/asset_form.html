@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}ONE ITMA {{ '자산 수정' if asset_pk else '자산 추가' }}{% endblock %}
+
+{% block navbar_title %}ONE ITMA{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/itma.css') }}?v=20261112a">
+{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <a href="{{ url_for('itma.assets_page') }}" class="small text-decoration-none itma-form-back" id="itmaFormBackLink">
+            <i class="bi bi-arrow-left"></i> 자산 목록
+        </a>
+        <div class="section-title mb-0 mt-1">
+            <i class="bi {{ 'bi-pencil-square' if asset_pk else 'bi-plus-square' }}"></i>
+            <span id="itmaFormTitle">{{ '자산 수정' if asset_pk else '자산 추가' }}</span>
+            <span id="itmaFormAssetCode" class="badge text-bg-light border ms-1 d-none"></span>
+        </div>
+    </div>
+    <div class="d-flex gap-2 itma-form-actions">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnItmaFormCancel">취소</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnItmaFormSave"><i class="bi bi-check2-circle"></i> 저장</button>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="btnItmaFormSaveList"><i class="bi bi-list-check"></i> 저장 후 목록</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="itma-asset-form-page" id="itmaAssetFormPage" data-asset-id="{{ asset_pk or '' }}">
+    <div class="alert alert-secondary py-2 small d-none" id="itmaFormReadonlyNotice" role="status">
+        <i class="bi bi-lock"></i> 이 자산의 카테고리 수정 권한이 없어 조회만 가능합니다.
+    </div>
+    <div class="alert alert-danger py-2 small d-none" id="itmaFormError" role="alert" aria-live="assertive"></div>
+
+    <form id="itmaAssetForm" novalidate autocomplete="off">
+        <section class="itma-form-section">
+            <h6 class="itma-form-section-title"><span class="itma-form-dot dot-base"></span>기본 정보</h6>
+            <div class="row g-3">
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_category">카테고리 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="f_category" data-group="base" data-field="category" required>
+                        <option value="">카테고리 선택</option>
+                    </select>
+                    <div class="invalid-feedback"></div>
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_site">사업장</label>
+                    <input class="form-control" id="f_site" data-group="base" data-field="site" list="dl_site" maxlength="100" placeholder="예: 대전, 연구소, 구미">
+                    <div class="invalid-feedback"></div>
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_asset_id">자산번호</label>
+                    <input class="form-control" id="f_asset_id" data-group="base" data-field="asset_id" maxlength="100" placeholder="중복 불가">
+                    <div class="invalid-feedback"></div>
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_usage_status">운영상태</label>
+                    <select class="form-select" id="f_usage_status" data-group="base" data-field="usage_status">
+                        <option value="">선택 안 함</option>
+                    </select>
+                    <div class="invalid-feedback"></div>
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_manufacturer">제조사</label>
+                    <input class="form-control" id="f_manufacturer" data-group="base" data-field="manufacturer" list="dl_manufacturer" maxlength="255">
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_item_name">품명</label>
+                    <input class="form-control" id="f_item_name" data-group="base" data-field="item_name" list="dl_item_name" maxlength="255">
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_storage_location">보관 위치</label>
+                    <input class="form-control" id="f_storage_location" data-group="base" data-field="storage_location" list="dl_storage_location" maxlength="255">
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_sales_rep">담당자</label>
+                    <input class="form-control" id="f_sales_rep" data-group="base" data-field="sales_rep" list="dl_sales_rep" maxlength="100">
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_received_date">입고일</label>
+                    <input type="date" class="form-control" id="f_received_date" data-group="base" data-field="received_date">
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_released_date">출고일</label>
+                    <input type="date" class="form-control" id="f_released_date" data-group="base" data-field="released_date">
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label" for="f_manufacture_month">제조년월</label>
+                    <input type="month" class="form-control" id="f_manufacture_month" data-group="base" data-field="manufacture_month">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="f_inbound_note">입고 메모</label>
+                    <textarea class="form-control" id="f_inbound_note" data-group="base" data-field="inbound_note" rows="2"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="f_outbound_note">출고 메모</label>
+                    <textarea class="form-control" id="f_outbound_note" data-group="base" data-field="outbound_note" rows="2"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="f_detail_note">상세 메모</label>
+                    <textarea class="form-control" id="f_detail_note" data-group="base" data-field="detail_note" rows="2"></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section class="itma-form-section">
+            <h6 class="itma-form-section-title"><span class="itma-form-dot dot-equipment"></span>장비 정보</h6>
+            <div class="row g-3">
+                <div class="col-md-4"><label class="form-label" for="d_used_group">그룹</label><input class="form-control" id="d_used_group" data-group="details" data-field="used_group"></div>
+                <div class="col-md-4"><label class="form-label" for="d_used_user">사용자</label><input class="form-control" id="d_used_user" data-group="details" data-field="used_user"></div>
+                <div class="col-md-4"><label class="form-label" for="d_user_position">직급</label><input class="form-control" id="d_user_position" data-group="details" data-field="user_position"></div>
+                <div class="col-md-4"><label class="form-label" for="d_network_type">네트워크 구분</label><input class="form-control" id="d_network_type" data-group="details" data-field="network_type" placeholder="예: 업무망"></div>
+                <div class="col-md-4"><label class="form-label" for="d_ip_address">IP/Subnet</label><input class="form-control" id="d_ip_address" data-group="details" data-field="ip_address" placeholder="예: 10.0.0.10/24"></div>
+                <div class="col-md-4"><label class="form-label" for="d_mac_address">Mac address</label><input class="form-control" id="d_mac_address" data-group="details" data-field="mac_address" placeholder="예: 00-11-22-33-44-55"></div>
+            </div>
+        </section>
+
+        <section class="itma-form-section">
+            <h6 class="itma-form-section-title"><span class="itma-form-dot dot-device"></span>장비 상세</h6>
+            <div class="row g-3">
+                <div class="col-md-4"><label class="form-label" for="d_hostname">장비명</label><input class="form-control" id="d_hostname" data-group="details" data-field="hostname"></div>
+                <div class="col-md-4"><label class="form-label" for="d_os_version">OS/Version</label><input class="form-control" id="d_os_version" data-group="details" data-field="os_version"></div>
+                <div class="col-md-4">
+                    <label class="form-label" for="d_serial_number">Serial Number</label>
+                    <input class="form-control" id="d_serial_number" data-group="details" data-field="serial_number" placeholder="중복 불가">
+                    <div class="invalid-feedback"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="itma-form-section d-none" id="itmaFormCustomSection">
+            <h6 class="itma-form-section-title"><span class="itma-form-dot dot-custom"></span>사용자 정의 컬럼</h6>
+            <p class="small text-muted d-none mb-2" id="itmaFormCustomNotice"><i class="bi bi-lock"></i> 사용자 정의 컬럼은 컬럼 관리 권한이 있는 계정만 수정할 수 있습니다.</p>
+            <div class="row g-3" id="itmaFormCustomFields"></div>
+        </section>
+
+        <div class="itma-form-meta small text-muted" id="itmaFormMeta"></div>
+    </form>
+
+    <datalist id="dl_site"></datalist>
+    <datalist id="dl_manufacturer"></datalist>
+    <datalist id="dl_item_name"></datalist>
+    <datalist id="dl_storage_location"></datalist>
+    <datalist id="dl_sales_rep"></datalist>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+window.itmaInitialPermissions = {{ itma_permissions|tojson|safe if itma_permissions else '{}' }};
+</script>
+<script src="{{ url_for('static', filename='js/itma-asset-form.js') }}?v=20261112a"></script>
+{% endblock %}

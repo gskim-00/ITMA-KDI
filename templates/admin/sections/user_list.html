@@ -1,0 +1,159 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-people-fill"></i> 사용자 현황
+        </h2>
+        <p class="section-description">
+            사용자 검색과 계정 권한, 상태, 액션을 관리합니다.
+        </p>
+    </div>
+    <div class="section-body">
+        <div class="row g-2 mb-3">
+            <div class="col-md-8 col-lg-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input
+                        type="text"
+                        id="userSearchInput"
+                        class="form-control"
+                        placeholder="이름, 사용자 ID, 이메일, 권한으로 검색"
+                        autocomplete="off"
+                    >
+                    <button type="button" id="userSearchResetBtn" class="btn btn-outline-secondary">초기화</button>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-6 d-flex align-items-center">
+                <small id="userListSearchCount" class="text-muted">검색 결과 {{ users|length }}명</small>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <div>
+                총 <strong id="userTotalCount">{{ users|length }}</strong>명의 사용자
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" id="btnBulkDeleteUsers" class="btn btn-outline-danger" disabled>
+                    <i class="bi bi-trash"></i> 선택 삭제
+                </button>
+                <a href="#add-user" class="btn btn-primary menu-link" data-section="add-user">
+                    <i class="bi bi-person-plus"></i> 신규 등록
+                </a>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover" id="userListTable">
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">
+                            <input type="checkbox" id="selectAllUsers" class="form-check-input" aria-label="전체 사용자 선택">
+                        </th>
+                        <th style="width: 12%;" class="sortable-column" data-column="real_name">
+                            <div class="sort-header">
+                                <span>이름</span>
+                                <button type="button" class="btn btn-link btn-sm sort-btn p-0 ms-1" data-column="real_name" title="정렬">
+                                    <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th style="width: 12%;" class="sortable-column" data-column="username">
+                            <div class="sort-header">
+                                <span>사용자 ID</span>
+                                <button type="button" class="btn btn-link btn-sm sort-btn p-0 ms-1" data-column="username" title="정렬">
+                                    <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th style="width: 16%;" class="sortable-column" data-column="email">
+                            <div class="sort-header">
+                                <span>이메일</span>
+                                <button type="button" class="btn btn-link btn-sm sort-btn p-0 ms-1" data-column="email" title="정렬">
+                                    <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th style="width: 10%;" class="sortable-column" data-column="role">
+                            <div class="sort-header">
+                                <span>권한</span>
+                                <button type="button" class="btn btn-link btn-sm sort-btn p-0 ms-1" data-column="role" title="정렬">
+                                    <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th style="width: 8%;" class="sortable-column" data-column="is_active">
+                            <div class="sort-header">
+                                <span>활성화</span>
+                                <button type="button" class="btn btn-link btn-sm sort-btn p-0 ms-1" data-column="is_active" title="정렬">
+                                    <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th style="width: 14%;" class="sortable-column" data-column="created_at">
+                            <div class="sort-header">
+                                <span>가입/생성일</span>
+                                <button type="button" class="btn btn-link btn-sm sort-btn p-0 ms-1" data-column="created_at" title="정렬">
+                                    <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th style="width: 14%;">액션</th>
+                    </tr>
+                </thead>
+                <tbody id="userListTableBody">
+                    {% for user in users %}
+                    <tr class="user-row" data-username="{{ user[0] }}" data-created-at="{{ user[5] if user|length > 5 else '' }}">
+                        <td>
+                            <input
+                                type="checkbox"
+                                class="form-check-input user-select-checkbox"
+                                value="{{ user[0] }}"
+                                data-role="{{ user[2] }}"
+                                aria-label="{{ user[0] }} 선택"
+                            >
+                        </td>
+                        <td><strong>{{ user[1] }}</strong></td>
+                        <td>{{ user[0] }}</td>
+                        <td>
+                            {% if user[4] %}
+                            <a href="mailto:{{ user[4] }}" class="text-decoration-none">
+                                <i class="bi bi-envelope"></i> {{ user[4] }}
+                            </a>
+                            {% else %}
+                            <small class="text-muted">미등록</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if user[2]=='admin' %}danger{% elif user[2]=='manager' %}warning{% else %}info{% endif %}">
+                                {{ user[2] }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if user[3] %}
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                            <i class="bi bi-x-circle-fill text-danger"></i>
+                            {% endif %}
+                        </td>
+                        <td data-created-at="{{ user[5].strftime('%Y-%m-%d %H:%M:%S') if user[5] else '' }}">
+                            {% if user|length > 5 and user[5] %}
+                            <small class="text-muted">{{ user[5].strftime('%Y-%m-%d') }}</small>
+                            {% else %}
+                            <small class="text-muted">-</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal" data-bs-target="#editUserModal"
+                                    data-edit-user="true"
+                                    data-username="{{ user[0] }}"
+                                    data-real-name="{{ user[1]|default('', true)|e }}"
+                                    data-email="{{ user[4]|default('', true)|e }}"
+                                    data-allowed-ip-list="{{ user[6]|default('', true)|e }}">수정</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="deleteUser('{{ user[0] }}')">삭제</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

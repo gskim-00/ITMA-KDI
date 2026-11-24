@@ -1,0 +1,73 @@
+<div class="content-card">
+    <div class="content-card-header">
+        <h5><i class="bi bi-box-arrow-in-right"></i> 로그인 화면 설정</h5>
+    </div>
+    <div class="content-card-body">
+        <form id="loginPageSettingsForm" class="row g-3" novalidate>
+            <div class="col-md-9">
+                <label for="loginSiteName" class="form-label">사이트 명칭</label>
+                <input type="text" class="form-control" id="loginSiteName" maxlength="100">
+                <div class="form-text">값을 입력한 경우에만 로그인 상단에 표시됩니다.</div>
+            </div>
+            <div class="col-md-3">
+                <label for="loginSiteNameFontSize" class="form-label">사이트 명칭 크기</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="loginSiteNameFontSize" min="12" max="48" step="1" placeholder="기본">
+                    <span class="input-group-text">px</span>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <label for="loginWelcomeMessage" class="form-label">로그인 안내 문구</label>
+                <input type="text" class="form-control" id="loginWelcomeMessage" maxlength="300">
+                <div class="form-text">값을 입력한 경우에만 로그인 상단에 표시됩니다.</div>
+            </div>
+            <div class="col-md-3">
+                <label for="loginWelcomeMessageFontSize" class="form-label">안내 문구 크기</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="loginWelcomeMessageFontSize" min="10" max="32" step="1" placeholder="기본">
+                    <span class="input-group-text">px</span>
+                </div>
+            </div>
+            <div class="col-12 d-flex align-items-center gap-2">
+                <button type="submit" class="btn btn-primary" id="loginPageSettingsSaveButton"><i class="bi bi-check-circle"></i> 저장</button>
+                <span id="loginPageSettingsResult" class="small" role="status"></span>
+            </div>
+        </form>
+
+        <div class="border-top mt-4 pt-4">
+            <h6 class="mb-3"><i class="bi bi-image"></i> 로그인 로고</h6>
+            <div class="col-12">
+                <label for="loginLogoFile" class="form-label">사용자 지정 로고 (PNG, 최대 5MB)</label>
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-8">
+                        <input type="file" class="form-control" id="loginLogoFile" accept="image/png,.png">
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary" id="loginLogoUploadButton">로고 변경</button>
+                            <button type="button" class="btn btn-outline-secondary" id="loginLogoResetButton">기본 로고로 초기화</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-text">기본 logo.png 파일은 변경하지 않고 별도 파일로 저장합니다.</div>
+            </div>
+            <div id="loginLogoResult" class="small mt-2" role="status"></div>
+        </div>
+
+        <div class="border-top mt-4 pt-4">
+            <h6 class="mb-3"><i class="bi bi-eye"></i> 미리보기</h6>
+            <div class="border rounded bg-light p-4 text-center" id="loginPageSettingsPreview">
+                <h1 class="mb-1 d-none" id="loginPreviewSiteName"></h1>
+                <p class="text-muted mb-3 d-none" id="loginPreviewWelcomeMessage"></p>
+                <img id="loginPreviewLogo" src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="width: 180px; max-width: 100%;">
+                <div class="mx-auto mt-3" style="max-width: 320px;">
+                    <input class="form-control form-control-sm mb-2" placeholder="사용자명" disabled>
+                    <input class="form-control form-control-sm mb-2" placeholder="비밀번호" disabled>
+                    <button type="button" class="btn btn-sm btn-primary w-100" disabled>로그인</button>
+                    <p class="small text-muted mt-3 mb-0">비밀번호 찾기</p>
+                    <p class="small text-muted mt-3 mb-0">ONE ITMA 자산관리 시스템 &copy; Jininfra </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,64 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-clipboard-check"></i> 최근 접속 로그
+        </h2>
+        <p class="section-description">
+            검색 및 필터를 사용하여 최근 접속 로그를 검토합니다.
+        </p>
+    </div>
+    <div class="section-body">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div class="input-group" style="max-width: 560px;">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input
+                    type="text"
+                    id="accessLogSearchInput"
+                    class="form-control"
+                    placeholder="사용자명, 접속 시간, IP 주소 검색"
+                    autocomplete="off"
+                >
+                <button type="button" class="btn btn-outline-secondary" id="accessLogSearchResetBtn">초기화</button>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <label for="accessLogPageSize" class="form-label mb-0">표시 건수</label>
+                <select id="accessLogPageSize" class="form-select form-select-sm" style="width: 80px;">
+                    <option value="10">10</option>
+                    <option value="30">30</option>
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                    <option value="all">전체</option>
+                </select>
+                <small id="accessLogSummary" class="text-muted mb-0">로딩 중...</small>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>사용자명</th>
+                        <th>접속 시간</th>
+                        <th>IP 주소</th>
+                    </tr>
+                </thead>
+                <tbody id="accessLogTableBody">
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log[0] }}</td>
+                        <td><small>{{ log[2] }}</small></td>
+                        <td><small>{{ log[1] }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3" id="accessLogPaginationWrap">
+            <nav aria-label="접속 로그 페이지 이동">
+                <ul class="pagination pagination-sm mb-0" id="accessLogPagination"></ul>
+            </nav>
+        </div>
+    </div>
+</div>

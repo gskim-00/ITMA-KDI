@@ -1,0 +1,60 @@
+===== 삭제 전 건수 =====
+         t          | count 
+--------------------+-------
+ users              |     1
+ permission_groups  |     0
+ itma_assets        |     2
+ itma_asset_history |     0
+ itma_spec_forms    |     0
+ audit_logs         |     2
+ access_logs        |     0
+ email_logs         |     0
+(8 rows)
+
+BEGIN
+NOTICE:  truncate cascades to table "itma_asset_spec_items"
+NOTICE:  truncate cascades to table "itma_asset_details"
+NOTICE:  truncate cascades to table "itma_asset_detail_changes"
+NOTICE:  truncate cascades to table "itma_asset_delivery_changes"
+NOTICE:  truncate cascades to table "itma_asset_equipment_changes"
+NOTICE:  truncate cascades to table "itma_asset_security_changes"
+NOTICE:  truncate cascades to table "itma_asset_software_items"
+NOTICE:  truncate cascades to table "itma_asset_license_items"
+NOTICE:  truncate cascades to table "itma_custom_column_values"
+TRUNCATE TABLE
+TRUNCATE TABLE
+NOTICE:  truncate cascades to table "itma_spec_form_items"
+NOTICE:  truncate cascades to table "itma_asset_spec_items"
+TRUNCATE TABLE
+NOTICE:  truncate cascades to table "itma_custom_column_values"
+TRUNCATE TABLE
+NOTICE:  truncate cascades to table "permission_group_categories"
+NOTICE:  truncate cascades to table "user_permission_groups"
+TRUNCATE TABLE
+TRUNCATE TABLE
+DELETE 0
+DO
+COMMIT
+===== 삭제 후 건수 =====
+           t            | count 
+------------------------+-------
+ users                  |     1
+ permission_groups      |     0
+ user_permission_groups |     0
+ itma_assets            |     0
+ itma_asset_details     |     0
+ itma_asset_history     |     0
+ itma_spec_forms        |     0
+ itma_spec_form_items   |     0
+ audit_logs             |     0
+ access_logs            |     0
+ email_logs             |     0
+ itma_categories (유지) |    11
+ email_templates (유지) |     4
+(13 rows)
+
+ username | role  | is_active 
+----------+-------+-----------
+ admin    | admin | t
+(1 row)
+

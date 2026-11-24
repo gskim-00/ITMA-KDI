@@ -1,0 +1,134 @@
+/* Login Page Styles */
+body {
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-form {
+    width: 100%;
+    max-width: 400px;
+    padding: 15px;
+    margin: auto;
+}
+
+.login-password-toggle {
+    min-width: 44px;
+}
+
+.login-flash-message {
+    white-space: pre-line;
+}
+
+.password-setup-note {
+    white-space: normal;
+}
+
+.access-pending-body {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top left, rgba(27, 110, 194, 0.14), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(255, 183, 77, 0.2), transparent 28%),
+        linear-gradient(180deg, #f3f6fa 0%, #eaf0f7 100%);
+}
+
+.access-pending-wrap {
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.access-pending-card {
+    padding: 32px 28px;
+    border: 1px solid #d6deea;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 24px 60px rgba(41, 65, 91, 0.12);
+}
+
+.access-pending-badge {
+    width: 64px;
+    height: 64px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #284d8f, #4f7cc7);
+    color: #fff;
+    font-size: 1.6rem;
+}
+
+.access-pending-title {
+    margin-bottom: 12px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #203047;
+}
+
+.access-pending-text {
+    margin-bottom: 16px;
+    color: #526376;
+    line-height: 1.6;
+}
+
+.access-pending-alert {
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border: 1px solid #f0c66d;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fff6dd, #ffefbf);
+    color: #785400;
+    font-weight: 700;
+}
+
+.access-pending-meta {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.access-pending-meta div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #f5f8fc;
+}
+
+.access-pending-meta dt {
+    margin: 0;
+    color: #6b7b8c;
+    font-weight: 600;
+}
+
+.access-pending-meta dd {
+    margin: 0;
+    color: #203047;
+    font-weight: 700;
+}
+
+.access-pending-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+@media (max-width: 576px) {
+    .access-pending-card {
+        padding: 24px 18px;
+        border-radius: 20px;
+    }
+
+    .access-pending-meta div {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .access-pending-actions {
+        flex-direction: column-reverse;
+    }
+}

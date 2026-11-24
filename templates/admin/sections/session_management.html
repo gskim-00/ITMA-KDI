@@ -1,0 +1,93 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-clock-history"></i> 세션 관리
+        </h2>
+        <p class="section-description">
+            현재 활성화된 사용자 세션을 관리하고 모니터링합니다
+        </p>
+    </div>
+
+    <!-- 세션 통계 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-people-fill" style="font-size: 2rem; color: #28a745;"></i>
+                    <h6 class="mt-2">활성 세션</h6>
+                    <h3 id="activeSessionsCount">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-person-check" style="font-size: 2rem; color: #17a2b8;"></i>
+                    <h6 class="mt-2">오늘 로그인</h6>
+                    <h3 id="todayLoginsCount">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-clock" style="font-size: 2rem; color: #ffc107;"></i>
+                    <h6 class="mt-2">평균 세션 시간</h6>
+                    <h3 id="avgSessionTime">0분</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-person-x" style="font-size: 2rem; color: #dc3545;"></i>
+                    <h6 class="mt-2">만료된 세션</h6>
+                    <h3 id="expiredSessionsCount">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 세션 목록 -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list"></i> 활성 세션 목록</span>
+            <div class="btn-group">
+                <button id="btnRefreshSessions" class="btn btn-sm btn-light">
+                    <i class="bi bi-arrow-clockwise"></i> 새로고침
+                </button>
+                <button id="btnClearExpiredSessions" class="btn btn-sm btn-warning">
+                    <i class="bi bi-trash"></i> 만료 세션 정리
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">사용자</th>
+                            <th style="width: 15%;">실명</th>
+                            <th style="width: 10%;">권한</th>
+                            <th style="width: 15%;">로그인 시간</th>
+                            <th style="width: 10%;">세션 시간</th>
+                            <th style="width: 15%;">IP 주소</th>
+                            <th style="width: 10%;">상태</th>
+                            <th style="width: 10%;">액션</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessionsTable">
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">로딩 중...</span>
+                                </div>
+                                로딩 중...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

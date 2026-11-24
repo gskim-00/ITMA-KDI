@@ -1,0 +1,318 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-envelope-at"></i> 이메일 발송 시스템
+        </h2>
+        <p class="section-description">
+            이메일 발송 및 재사용 가능한 템플릿을 관리합니다.
+        </p>
+    </div>
+    <div class="section-body">
+        <!-- 서브 탭 네비게이션 -->
+        <ul class="nav nav-tabs mb-4" id="emailSubTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="send-email-form-tab" data-bs-toggle="tab" data-bs-target="#send-email-form"
+                    type="button" role="tab">
+                    <i class="bi bi-envelope"></i> 이메일 발송
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="email-template-tab" data-bs-toggle="tab" data-bs-target="#email-template"
+                    type="button" role="tab">
+                    <i class="bi bi-file-earmark-text"></i> 이메일 템플릿
+                </button>
+            </li>
+        </ul>
+
+        <!-- 서브 탭 콘텐츠 -->
+        <div class="tab-content" id="emailSubTabContent">
+            <!-- 이메일 발송 탭 -->
+            <div class="tab-pane fade show active" id="send-email-form" role="tabpanel">
+                <div class="row">
+                    <!-- 왼쪽: 이메일 발송 폼 -->
+                    <div class="col-lg-6">
+                        <h6 class="mb-3"><i class="bi bi-pencil-square"></i> 이메일 작성</h6>
+                        <form id="emailForm">
+                            <div class="mb-3">
+                                <label class="form-label">템플릿 불러오기 <span class="text-muted">(선택사항)</span></label>
+                                <select id="templateSelector" class="form-select">
+                                    <option value="">-- 직접 작성 --</option>
+                                </select>
+                                <small class="text-muted">템플릿을 선택하면 제목과 본문이 자동으로 입력됩니다</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">받는사람</label>
+                                <div class="input-group">
+                                    <input type="text" name="recipient" id="recipientInput" class="form-control" 
+                                           placeholder="example@company.com" autocomplete="email" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="openAddressBook()">
+                                        <i class="bi bi-person-lines-fill"></i> 주소록
+                                    </button>
+                                </div>
+                                <small class="text-muted">여러 명에게 발송하려면 쉼표(,)로 구분</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">제목</label>
+                                <input type="text" name="subject" class="form-control" 
+                                       placeholder="이메일 제목을 입력하세요" autocomplete="off" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">메시지</label>
+                                <textarea name="body" class="form-control" rows="8" 
+                                          placeholder="메시지를 입력하세요" required></textarea>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                    <strong>사용 가능한 변수:</strong>
+                                    {real_name}, {username}, {password}, {role}, {event_type}, {asset_name}, {asset_id}, {event_date}, {details}
+                            </small>
+                            <div class="d-flex gap-2 mt-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send"></i> 발송
+                                </button>
+                                <button type="reset" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-counterclockwise"></i> 초기화
+                                </button>
+                            </div>
+
+                            <div id="emailResult" class="mt-4" style="display: none;"></div>
+                        </form>
+                    </div>
+
+                    <!-- 오른쪽: 최근 발송 내역 -->
+                    <div class="col-lg-6">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0"><i class="bi bi-clock-history"></i> 최근 발송 내역</h6>
+                            <div class="email-history-toolbar">
+                                <select id="recentEmailsPerPage" class="form-select form-select-sm email-history-page-size" aria-label="최근 발송 내역 표시 수">
+                                    <option value="10">10개</option>
+                                    <option value="20">20개</option>
+                                    <option value="50">50개</option>
+                                </select>
+                                <button class="btn btn-sm btn-outline-primary email-history-refresh-btn" onclick="loadRecentEmails(1)">
+                                    <i class="bi bi-arrow-clockwise"></i> 새로고침
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="recentEmailsContainer">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-hourglass-split fs-1"></i>
+                                <p class="mt-2">로딩 중...</p>
+                            </div>
+                        </div>
+                        <div id="recentEmailsPager" class="d-flex justify-content-between align-items-center mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 이메일 템플릿 탭 -->
+            <div class="tab-pane fade" id="email-template" role="tabpanel">
+                <div id="templateSaveResult" class="mb-4" style="display: none;"></div>
+                <div class="row">
+                    <!-- 왼쪽: 템플릿 목록 -->
+                    <div class="col-lg-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0"><i class="bi bi-folder"></i> 템플릿 목록</h6>
+                            <button class="btn btn-sm btn-success" onclick="openNewTemplateModal()">
+                                <i class="bi bi-plus-circle"></i> 새 템플릿
+                            </button>
+                        </div>
+                        
+                        <div id="templateListContainer">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-hourglass-split fs-1"></i>
+                                <p class="mt-2">로딩 중...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 오른쪽: 템플릿 편집/미리보기 -->
+                    <div class="col-lg-8">
+                        <div id="templateEditContainer" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0"><i class="bi bi-pencil-square"></i> 템플릿 편집</h6>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary" onclick="saveTemplate()">
+                                        <i class="bi bi-save"></i> 저장
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteTemplate()">
+                                        <i class="bi bi-trash"></i> 삭제
+                                    </button>
+                                </div>
+                            </div>
+
+                            <input type="hidden" id="currentTemplateId">
+                            
+                            <div class="mb-3">
+                                <label class="form-label">템플릿 이름</label>
+                                <input type="text" id="templateName" class="form-control" 
+                                       placeholder="예: 신규 사용자 환영 메시지" autocomplete="off" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">템플릿 유형 (선택사항)</label>
+                                <select id="templateType" class="form-select">
+                                    <option value="">-- 일반 템플릿 --</option>
+                                    <option value="welcome_new_user">신규 사용자 환영</option>
+                                    <option value="failed_login_alert">로그인 실패 경고</option>
+                                    <option value="project_join">자산관리 참여</option>
+                                    <option value="project_complete">자산관리 종료</option>
+                                    <option value="notification">알림</option>
+                                    <option value="reminder">리마인더</option>
+                                    <option value="__custom__">새 유형 직접 입력</option>
+                                </select>
+                                <input type="text" id="templateTypeCustom" class="form-control mt-2" 
+                                       placeholder="예: asset_expiry_notice" autocomplete="off" style="display: none;">
+                                <small class="text-muted">새 유형은 영문, 숫자, 밑줄(_) 조합을 권장합니다.</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">이메일 제목</label>
+                                <input type="text" id="templateSubject" class="form-control" 
+                                       placeholder="예: [자산 관리 시스템] 계정 생성 완료" autocomplete="off" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">이메일 본문</label>
+                                <textarea id="templateBody" class="form-control" rows="12" 
+                                          placeholder="이메일 내용을 입력하세요" required></textarea>
+                                <small class="text-muted d-block mt-2">
+                                    <strong>사용 가능한 변수:</strong>
+                                    {real_name}, {username}, {password}, {role}, {event_type}, {asset_name}, {asset_id}, {event_date}, {details}
+                                </small>
+                            </div>
+
+                            <!-- 미리보기 -->
+                            <div class="mt-4">
+                                <h6 class="mb-3"><i class="bi bi-eye"></i> 미리보기</h6>
+                                <div class="bg-light p-3 rounded border">
+                                    <p class="text-muted small mb-2"><strong>제목:</strong></p>
+                                    <h6 id="previewSubject" class="mb-3" style="word-break: break-word;">-</h6>
+                                    <p class="text-muted small mb-2"><strong>본문:</strong></p>
+                                    <div id="previewBody" class="text-break" style="white-space: pre-wrap;">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="templateEmptyState" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p class="mt-3">템플릿을 선택하거나 새로 만들어보세요</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 주소록 모달 -->
+<div class="modal fade" id="addressBookModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-lines-fill"></i> 주소록</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 탭 네비게이션 -->
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="user-emails-tab" data-bs-toggle="tab" 
+                                data-bs-target="#user-emails" type="button" role="tab">
+                            <i class="bi bi-people"></i> 사용자 목록
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="saved-addresses-tab" data-bs-toggle="tab" 
+                                data-bs-target="#saved-addresses" type="button" role="tab">
+                            <i class="bi bi-bookmark"></i> 저장된 주소
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- 탭 콘텐츠 -->
+                <div class="tab-content">
+                    <!-- 사용자 목록 탭 -->
+                    <div class="tab-pane fade show active" id="user-emails" role="tabpanel">
+                        <div class="mb-3">
+                            <input type="text" id="userSearchInput" class="form-control" 
+                                   placeholder="이름이나 이메일로 검색...">
+                        </div>
+                        <div id="userEmailsContainer" style="max-height: 400px; overflow-y: auto;">
+                            <div class="text-center py-4">
+                                <i class="bi bi-hourglass-split"></i> 로딩 중...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 저장된 주소 탭 -->
+                    <div class="tab-pane fade" id="saved-addresses" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <input type="text" id="addressSearchInput" class="form-control me-2" 
+                                   placeholder="이름이나 이메일로 검색...">
+                            <button class="btn btn-success text-nowrap" onclick="openAddAddressModal()">
+                                <i class="bi bi-plus-circle"></i> 추가
+                            </button>
+                        </div>
+                        <div id="savedAddressesContainer" style="max-height: 400px; overflow-y: auto;">
+                            <div class="text-center py-4">
+                                <i class="bi bi-hourglass-split"></i> 로딩 중...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                <button type="button" class="btn btn-primary" onclick="applySelectedAddresses()">
+                    <i class="bi bi-check2"></i> 선택 완료
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 주소 추가 모달 -->
+<div class="modal fade" id="addAddressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> 새 주소 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAddressForm">
+                    <div class="mb-3">
+                        <label class="form-label">이름 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">이메일 <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">부서</label>
+                        <input type="text" name="department" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">직책</label>
+                        <input type="text" name="position" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">메모</label>
+                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+                <div id="addAddressResult" class="mt-3" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="saveNewAddress()">
+                    <i class="bi bi-save"></i> 저장
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

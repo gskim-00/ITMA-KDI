@@ -1,0 +1,23 @@
+===== containers =====
+itma_nginx | project_flask_itma-nginx | Up 29 minutes | 2026-11-06 09:02:17 +0900 KST
+flask_ITMA_WEB | project_flask_itma-web | Up 29 minutes | 2026-11-06 09:02:15 +0900 KST
+flask_ITMA_db | postgres:15-alpine | Up 31 minutes (healthy) | 2026-11-03 17:15:12 +0900 KST
+zen_tu | 51913a864d25 | Exited (1) 2 months ago | 2026-08-24 09:05:59 +0900 KST
+keen_carson | f8c8b8a0ffd1 | Exited (255) 2 months ago | 2026-08-24 09:05:52 +0900 KST
+pedantic_haibt | 1169fb459ed5 | Exited (137) 2 months ago | 2026-08-14 09:28:16 +0900 KST
+===== compose projects =====
+NAME                 STATUS              CONFIG FILES
+project_flask_itma   running(3)          C:\Users\user\desktop\ITMA\Project_flask_ITMA\docker-compose.yml
+===== web container labels/mounts =====
+project=project_flask_itma workdir=C:\Users\user\desktop\ITMA\Project_flask_ITMA configfiles=C:\Users\user\desktop\ITMA\Project_flask_ITMA\docker-compose.yml
+C:\Users\user\desktop\ITMA\Project_flask_ITMA -> /app
+
+===== db container =====
+project=project_flask_itma workdir=C:\Users\user\desktop\ITMA\Project_flask_ITMA
+===== images =====
+project_flask_itma-web:latest | e640babf3746 | 2026-11-06 09:01:51 +0900 KST
+project_flask_itma_v22-web:latest | eef414601c28 | 2026-10-12 08:57:53 +0900 KST
+project_flask_itma-nginx:latest | 51712585c3eb | 2026-08-12 17:32:42 +0900 KST
+project_flask_itma_v22-nginx:latest | 77cfed683d92 | 2026-08-12 17:32:42 +0900 KST
+bentopdf-main-bentopdf:latest | 12cd25d9763e | 2026-08-12 17:25:04 +0900 KST
+postgres:15-alpine | 3d0f7584ed7d | 2026-07-08 02:48:31 +0900 KST

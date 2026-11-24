@@ -1,0 +1,155 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-file-text"></i> 감사 로그
+        </h2>
+        <p class="section-description">
+            시스템의 모든 중요 작업과 변경 사항을 추적합니다
+        </p>
+    </div>
+
+        <!-- 통계 -->
+    <div class="row mt-3">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-activity" style="font-size: 2rem; color: #28a745;"></i>
+                    <h6 class="mt-2">오늘 활동</h6>
+                    <h3 id="todayCount">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-calendar-week" style="font-size: 2rem; color: #17a2b8;"></i>
+                    <h6 class="mt-2">이번 주</h6>
+                    <h3 id="weekCount">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-calendar-month" style="font-size: 2rem; color: #ffc107;"></i>
+                    <h6 class="mt-2">이번 달</h6>
+                    <h3 id="monthCount">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 필터 -->
+    <div class="card mb-3 mt-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">사용자</label>
+                    <select id="filterUser" class="form-select">
+                        <option value="">전체</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">작업 유형</label>
+                    <select id="filterAction" class="form-select">
+                        <option value="">전체</option>
+                        <option value="login">로그인</option>
+                        <option value="logout">로그아웃</option>
+                        <option value="create">생성</option>
+                        <option value="update">수정</option>
+                        <option value="delete">삭제</option>
+                        <option value="download">다운로드</option>
+                        <option value="upload">업로드</option>
+                        <option value="config">설정 변경</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">시작 날짜</label>
+                    <input type="date" id="filterStartDate" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">종료 날짜</label>
+                    <input type="date" id="filterEndDate" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button id="btnApplyFilter" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i> 필터 적용
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로그 테이블 -->
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-ul"></i> 감사 로그 목록</span>
+            <div class="btn-group">
+                <button id="btnRefreshLogs" class="btn btn-sm btn-light">
+                    <i class="bi bi-arrow-clockwise"></i> 새로고침
+                </button>
+                <button id="btnExportLogs" class="btn btn-sm btn-light">
+                    <i class="bi bi-download"></i> CSV 내보내기
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">ID</th>
+                            <th style="width: 15%;">날짜/시간</th>
+                            <th style="width: 10%;">사용자</th>
+                            <th style="width: 10%;">작업</th>
+                            <th style="width: 15%;">대상</th>
+                            <th style="width: 25%;">세부 내용</th>
+                            <th style="width: 10%;">IP 주소</th>
+                            <th style="width: 5%;">결과</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditLogTable">
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">로딩 중...</span>
+                                </div>
+                                로딩 중...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 페이지네이션 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <select id="pageSize" class="form-select form-select-sm" style="width: 80px;">
+                        <option value="10">10</option>
+                        <option value="30">30</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="all">전체</option>
+                    </select>
+                </div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="logPagination">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">이전</a>
+                        </li>
+                        <li class="page-item active">
+                            <a class="page-link" href="#">1</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">다음</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div id="logCount" class="text-muted">
+                    총 <strong>0</strong>개의 로그
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

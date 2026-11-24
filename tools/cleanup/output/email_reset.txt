@@ -1,0 +1,32 @@
+===== 초기화 전 (비밀번호는 설정 여부만 표시) =====
+ id |     smtp_server      | smtp_port |   smtp_username    | smtp_password |    sender_email    |     sender_name      | use_tls |         updated_at         
+----+----------------------+-----------+--------------------+---------------+--------------------+----------------------+---------+----------------------------
+  1 | spamout.jininfra.com |        25 | gskim@jininfra.com | (설정됨)      | gskim@jininfra.com | ITMA 자산관리 시스템 | t       | 2026-10-12 02:10:35.414652
+(1 row)
+
+BEGIN
+DELETE 1
+COMMIT
+===== 삭제 후 건수 =====
+ email_settings_rows 
+---------------------
+                   0
+(1 row)
+
+reset_exit_code=0 
+ Container flask_ITMA_WEB Restarting 
+ Container flask_ITMA_WEB Started 
+===== after restart =====
+ id | smtp_server | smtp_port | smtp_username |   pw   | sender_email | sender_name | use_tls |         updated_at         
+----+-------------+-----------+---------------+--------+--------------+-------------+---------+----------------------------
+  2 |             |       587 |               | (none) |              |             | f       | 2026-11-06 09:55:55.383923
+(1 row)
+
+[2026-11-06 09:55:54 +0900] [8] [INFO] Booting worker with pid: 8
+[2026-11-06 09:55:54 +0900] [9] [INFO] Booting worker with pid: 9
+[2026-11-06 09:55:54 +0900] [10] [INFO] Booting worker with pid: 10
+[2026-11-06 09:55:54 +0900] [1] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl
+[INFO] Email settings loaded: :587
+[INFO] Email settings loaded: :587
+[INFO] Email settings loaded: :587
+[INFO] Email settings loaded: :587

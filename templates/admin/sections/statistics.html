@@ -1,0 +1,113 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-bar-chart-fill"></i> 시스템 통계
+        </h2>
+        <p class="section-description">
+            접속자의 통계를 관리하고 확인할 수 있습니다.
+        </p>
+    </div>
+    <div class="section-body">
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <h6 class="mb-3">
+                    <i class="bi bi-people-fill"></i> 사용자 통계
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>항목</th>
+                                <th>수량</th>
+                                <th>비율</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>총 사용자</td>
+                                <td><strong>{{ total_users if total_users is not none else 0 }}</strong></td>
+                                <td>100%</td>
+                            </tr>
+                            <tr>
+                                <td>관리자</td>
+                                <td><strong>{{ admin_users if admin_users is not none else 0 }}</strong></td>
+                                <td>
+                                    {% if total_users and total_users > 0 %}
+                                        {{ (admin_users / total_users * 100)|round(1) }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>매니저</td>
+                                <td><strong>{{ manager_users if manager_users is not none else 0 }}</strong></td>
+                                <td>
+                                    {% if total_users and total_users > 0 %}
+                                        {{ (manager_users / total_users * 100)|round(1) }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>일반 사용자</td>
+                                <td><strong>{{ normal_users if normal_users is not none else 0 }}</strong></td>
+                                <td>
+                                    {% if total_users and total_users > 0 %}
+                                        {{ (normal_users / total_users * 100)|round(1) }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <h6 class="mb-3">
+                    <i class="bi bi-clock-history"></i> 접속 통계
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>항목</th>
+                                <th>수량</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>총 접속 기록</td>
+                                <td><strong>{{ total_access_logs if total_access_logs is not none else 0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>오늘 접속 수</td>
+                                <td><strong>{{ today_access_logs if today_access_logs is not none else 0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>최근 7일 접속 수</td>
+                                <td><strong>{{ week_access_logs if week_access_logs is not none else 0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>최근 30일 접속 수</td>
+                                <td><strong>{{ month_access_logs if month_access_logs is not none else 0 }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-12">
+                <div class="alert alert-light border mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    통계는 관리자 설정 페이지 진입 시점 기준으로 갱신됩니다.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,169 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-diagram-3-fill"></i> 그룹/권한 설정
+        </h2>
+        <p class="section-description">
+            카테고리별 조회/수정 권한을 그룹으로 관리하고 manager, user 사용자에게 할당합니다.
+        </p>
+    </div>
+    <div class="section-body">
+        <div class="row g-3">
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>권한 그룹</strong>
+                        <button type="button" id="btnPermissionGroupCreate" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle"></i> 신규 그룹
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="permissionGroupList" class="list-group small"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center permission-panel-header">
+                        <strong id="permissionGroupFormTitle">권한 그룹 상세</strong>
+                        <button type="button" id="btnPermissionGroupDelete" class="btn btn-sm btn-outline-danger d-none">
+                            <i class="bi bi-trash"></i> 삭제
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <form id="permissionGroupForm">
+                            <input type="hidden" id="permissionGroupId">
+                            
+                            <!-- 아코디언 섹션 -->
+                            <div class="permission-accordion" id="permissionAccordion">
+                                <!-- 기본 정보 섹션 -->
+                                <div class="permission-accordion-item">
+                                    <button type="button" class="permission-accordion-header" data-bs-toggle="collapse" data-bs-target="#permissionBasicContent" aria-expanded="true">
+                                        <span class="permission-accordion-icon">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </span>
+                                        <span class="permission-accordion-title">
+                                            <i class="bi bi-info-circle"></i> 기본 정보
+                                        </span>
+                                    </button>
+                                    <div id="permissionBasicContent" class="permission-accordion-collapse collapse show" data-bs-parent="#permissionAccordion">
+                                        <div class="permission-accordion-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-500">그룹명 <span class="text-danger">*</span></label>
+                                                    <input type="text" id="permissionGroupName" class="form-control" maxlength="100" required placeholder="예: 네트워크 담당">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-500">대상 역할 <span class="text-danger">*</span></label>
+                                                    <select id="permissionTargetRole" class="form-select">
+                                                        <option value="manager">👤 manager (수정 권한 가능)</option>
+                                                        <option value="user">👁️ user (조회만 가능)</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-500">설명 및 용도</label>
+                                                    <textarea id="permissionGroupDescription" class="form-control" rows="2" placeholder="이 그룹의 목적과 담당 영역을 설명해주세요."></textarea>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="permissionGroupActive" checked>
+                                                        <label class="form-check-label" for="permissionGroupActive">
+                                                            <span class="fw-500">활성화</span>
+                                                            <span class="text-muted small">(비활성 그룹은 사용자에게 할당되지 않습니다)</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 카테고리 권한 섹션 -->
+                                <div class="permission-accordion-item">
+                                    <button type="button" class="permission-accordion-header" data-bs-toggle="collapse" data-bs-target="#permissionCategoryContent" aria-expanded="true">
+                                        <span class="permission-accordion-icon">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </span>
+                                        <span class="permission-accordion-title">
+                                            <i class="bi bi-shield-lock"></i> 카테고리 권한
+                                        </span>
+                                    </button>
+                                    <div id="permissionCategoryContent" class="permission-accordion-collapse collapse show" data-bs-parent="#permissionAccordion">
+                                        <div class="permission-accordion-body">
+                                            <div id="permissionEditLockNotice" class="permission-lock-notice d-none">
+                                                <i class="bi bi-lock-fill"></i> 
+                                                <span><strong>user 역할</strong>은 수정 권한을 줄 수 없습니다. 조회 권한만 저장됩니다.</span>
+                                            </div>
+                                            <div class="table-responsive">
+                                                <table id="permissionCategoryTable" class="table table-sm align-middle permission-category-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="permission-category-name">카테고리</th>
+                                                            <th class="permission-permission-col text-center">
+                                                                <div class="permission-col-header">
+                                                                    <label class="permission-head-toggle" for="permissionToggleAllView" title="모든 카테고리에 대한 조회 권한">
+                                                                        <span>조회</span>
+                                                                        <input type="checkbox" id="permissionToggleAllView" class="form-check-input">
+                                                                    </label>
+                                                                </div>
+                                                            </th>
+                                                            <th id="permissionEditColumnHead" class="permission-permission-col text-center permission-edit-col">
+                                                                <div class="permission-col-header">
+                                                                    <label class="permission-head-toggle" for="permissionToggleAllEdit" title="모든 카테고리에 대한 수정 권한">
+                                                                        <span>수정</span>
+                                                                        <input type="checkbox" id="permissionToggleAllEdit" class="form-check-input">
+                                                                    </label>
+                                                                </div>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="permissionCategoryTableBody"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 사용자 할당 섹션 -->
+                                <div class="permission-accordion-item">
+                                    <button type="button" class="permission-accordion-header" data-bs-toggle="collapse" data-bs-target="#permissionUserContent" aria-expanded="true">
+                                        <span class="permission-accordion-icon">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </span>
+                                        <span class="permission-accordion-title">
+                                            <i class="bi bi-people"></i> 사용자 할당
+                                            <span class="permission-assigned-count badge bg-info ms-2" id="permissionAssignedUserCount">0명</span>
+                                        </span>
+                                    </button>
+                                    <div id="permissionUserContent" class="permission-accordion-collapse collapse show" data-bs-parent="#permissionAccordion">
+                                        <div class="permission-accordion-body">
+                                            <div class="small text-muted mb-2">
+                                                이 그룹에 포함될 사용자를 선택하세요. (여러 명 선택 가능)
+                                            </div>
+                                            <div id="permissionAssignedUsers" class="permission-user-list"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 작업 버튼 -->
+                            <div class="permission-form-actions">
+                                <button type="button" id="btnPermissionGroupDelete" class="btn btn-outline-danger d-none">
+                                    <i class="bi bi-trash"></i> 삭제
+                                </button>
+                                <div class="ms-auto d-flex gap-2">
+                                    <button type="button" id="btnPermissionGroupReset" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-clockwise"></i> 초기화
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> 저장
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

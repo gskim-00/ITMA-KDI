@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<!--
+
+   ____  _   ________   ____________  ______ 
+  / __ \/ | / / ____/  /  _/_  __/  |/  /   |
+ / / / /  |/ / __/     / /  / / / /|_/ / /| |
+/ /_/ / /|  / /___   _/ /  / / / /  / / ___ |
+\____/_/ |_/_____/  /___/ /_/ /_/  /_/_/  |_|
+                                             
+ONE ITMA "자산 관리 시스템"
+Copyright (c) 2026 Jininfra Inc. All rights reserved.
+
+
+-->
+
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ONE ITMA 자산관리 시스템{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}?v=20261117a">
+    <link rel="icon" href="data:," />
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}"
+      data-csrf-token="{{ csrf_token|default('', true) }}"
+      data-username="{{ session.get('username', '') }}"
+      data-max-file-size-mb="{{ app_max_file_size_mb|default(100, true)|int }}"
+      data-profile-url="{{ url_for('auth.get_profile') }}">
+    <nav class="navbar navbar-dark mb-0 app-navbar">
+        <div class="container-fluid">
+            <a href="{{ url_for('itma.page') }}" class="navbar-brand mb-0 h1">
+                {% block navbar_icon %}<i class="bi bi-folder-check"></i>{% endblock %}
+                {% block navbar_title %}ONE ITMA 자산관리 시스템{% endblock %}
+            </a>
+            {# 상단 메뉴: '자산 관리'·'관리화면'은 드롭다운으로 하위 화면 바로 이동 #}
+            {% set _nav_perm = itma_permissions if itma_permissions is defined and itma_permissions else {} %}
+            {% set _nav_is_admin = session.get('role') == 'admin' %}
+            {% set _nav_can_add = _nav_is_admin or _nav_perm.get('can_edit_all') or _nav_perm.get('edit_categories') %}
+            {% set _nav_endpoint = request.endpoint or '' %}
+            <div class="d-flex align-items-center gap-1 app-navbar-actions">
+                <button type="button" id="openProfileModalBtn" class="btn btn-sm app-nav-btn app-nav-btn-user" data-bs-toggle="modal" data-bs-target="#profileModal">
+                    <i class="bi bi-person-circle"></i><span class="d-none d-md-inline">{{ session['username'] }}</span>
+                </button>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm app-nav-btn app-nav-btn-main dropdown-toggle{% if request.blueprint == 'itma' %} is-current{% endif %}"
+                            data-bs-toggle="dropdown" aria-expanded="false" title="자산 관리">
+                        <i class="bi bi-table"></i><span class="d-none d-md-inline">자산 관리</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end app-nav-dropdown">
+                        <li>
+                            <a class="dropdown-item{% if _nav_endpoint == 'itma.page' %} active{% endif %}" href="{{ url_for('itma.page') }}"{% if _nav_endpoint == 'itma.page' %} aria-current="page"{% endif %}>
+                                <i class="bi bi-speedometer2"></i>대시보드
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item{% if _nav_endpoint == 'itma.assets_page' %} active{% endif %}" href="{{ url_for('itma.assets_page') }}"{% if _nav_endpoint == 'itma.assets_page' %} aria-current="page"{% endif %}>
+                                <i class="bi bi-list-ul"></i>자산 목록
+                            </a>
+                        </li>
+                        {% if _nav_can_add %}
+                        <li>
+                            <a class="dropdown-item{% if _nav_endpoint == 'itma.asset_new_page' %} active{% endif %}" href="{{ url_for('itma.asset_new_page') }}"{% if _nav_endpoint == 'itma.asset_new_page' %} aria-current="page"{% endif %}>
+                                <i class="bi bi-plus-square"></i>자산 추가
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% if _nav_is_admin %}
+                {% set _admin_url = url_for('admin.settings') %}
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm app-nav-btn app-nav-btn-admin dropdown-toggle{% if request.blueprint == 'admin' %} is-current{% endif %}"
+                            data-bs-toggle="dropdown" aria-expanded="false" title="관리화면">
+                        <i class="bi bi-gear-fill"></i><span class="d-none d-md-inline">관리화면</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end app-nav-dropdown app-nav-dropdown-admin">
+                        <li><a class="dropdown-item" href="{{ _admin_url }}"><i class="bi bi-speedometer"></i>관리자 대시보드</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header">계정 관리</h6></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#user-list"><i class="bi bi-people"></i>사용자 현황</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#add-user"><i class="bi bi-person-plus"></i>신규 계정 등록</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#group-permissions"><i class="bi bi-diagram-3"></i>그룹/권한 설정</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#spec-forms"><i class="bi bi-card-checklist"></i>카테고리 관리</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header">시스템 관리</h6></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#login-page-settings"><i class="bi bi-box-arrow-in-right"></i>로그인 화면 설정</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#system-status"><i class="bi bi-heart-pulse"></i>시스템 상태</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#db-backup"><i class="bi bi-database-fill-down"></i>데이터베이스 백업</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#session-management"><i class="bi bi-clock-history"></i>세션 관리</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#audit-log"><i class="bi bi-file-text"></i>감사 로그</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header">모니터링 · 보안 · 서버</h6></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#access-log"><i class="bi bi-clipboard-check"></i>접속 로그</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#statistics"><i class="bi bi-bar-chart"></i>통계</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#security-settings"><i class="bi bi-shield-exclamation"></i>보안 설정</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#web-server"><i class="bi bi-hdd-network"></i>웹서버 설정</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header">이메일 관리</h6></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#email-settings"><i class="bi bi-gear"></i>이메일 설정</a></li>
+                        <li><a class="dropdown-item" href="{{ _admin_url }}#send-email"><i class="bi bi-send"></i>이메일 발송</a></li>
+                    </ul>
+                </div>
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm app-nav-btn app-nav-btn-logout">
+                    <i class="bi bi-box-arrow-right"></i><span class="d-none d-md-inline">로그아웃</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        {% block sidebar %}{% endblock %}
+
+        <main class="main-content">
+            <div class="container-fluid py-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div id="flashToastData" class="d-none" aria-hidden="true">
+                    {% for category, message in messages %}
+                    <div data-flash-message="{{ message|e }}" data-flash-type="{{ category|e }}"></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                {% block page_title %}{% endblock %}
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        <div id="globalToastContainer" class="toast-container position-fixed top-0 end-0 p-3 app-toast-container" aria-live="polite" aria-atomic="true">
+            <div id="globalToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="toast-icon"></i>
+                        <span class="toast-message"></span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="profileUpdateForm" method="POST" action="{{ url_for('auth.update_profile') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="profileModalLabel">내 정보 변경</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">이메일</label>
+                            <input type="email" class="form-control" id="profileEmail" name="email" placeholder="user@example.com" autocomplete="email">
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <label class="form-label">현재 비밀번호</label>
+                            <input type="password" class="form-control" id="profileCurrentPassword" name="current_password" autocomplete="current-password" placeholder="현재 비밀번호 입력">
+                            <small class="text-muted">비밀번호 변경 시에만 입력하세요.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">새 비밀번호</label>
+                            <input type="password" class="form-control" id="profileNewPassword" name="new_password" autocomplete="new-password">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">새 비밀번호 확인</label>
+                            <input type="password" class="form-control" id="profileConfirmPassword" name="confirm_password" autocomplete="new-password">
+                            <small id="profilePasswordMatchText" class="text-muted d-block mt-2">비밀번호 일치 여부: -</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                        <button type="submit" class="btn btn-primary">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/notify.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/base_common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/scroll_hint.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

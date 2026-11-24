@@ -1,0 +1,4 @@
+time=20261106_104624
+file=backups\before_test_cleanup_20261106_104624.sql
+exit_code=0
+size_bytes=78862

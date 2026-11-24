@@ -1,0 +1,13 @@
+Flask
+pandas
+openpyxl
+psycopg2-binary
+SQLAlchemy
+icalendar
+werkzeug
+python-dotenv
+python-dateutil
+geopy
+folium
+psutil
+gunicorn

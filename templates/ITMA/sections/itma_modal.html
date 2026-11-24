@@ -1,0 +1,78 @@
+<div class="modal fade" id="ITMA_Modal" tabindex="-1" aria-labelledby="ITMAModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="ITMAModalLabel">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> 사무실 자산관리(DMS)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-6">
+                                <label for="itmaExcelFile" class="form-label mb-1">엑셀 파일 업로드</label>
+                                <input type="file" id="itmaExcelFile" class="form-control" accept=".xlsx,.xls">
+                            </div>
+                            <div class="col-md-6 d-flex gap-2">
+                                <button type="button" id="btnItmaUpload" class="btn btn-success">
+                                    <i class="bi bi-upload"></i> 업로드
+                                </button>
+                                <button type="button" id="btnItmaRefresh" class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-clockwise"></i> 새로고침
+                                </button>
+                            </div>
+                        </div>
+                        <div id="itmaUploadResult" class="mt-2 small text-muted"></div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover align-middle text-center" id="itmaTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>구분</th>
+                                <th>품명</th>
+                                <th>제조사</th>
+                                <th>시리얼번호</th>
+                                <th>반입일</th>
+                                <th>비고(반입)</th>
+                                <th>반출일</th>
+                                <th>비고(반출)</th>
+                                <th>보관장소</th>
+                                <th>상세비고</th>
+                                <th>영업대표</th>
+                                <th>입력시간</th>
+                                <th>업데이트시간</th>
+                            </tr>
+                            <tr>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="category" placeholder="필터"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="item_name" placeholder="필터"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="manufacturer" placeholder="필터"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="serial_number" placeholder="필터"></th>
+                                <th><input type="date" class="form-control form-control-sm itma-filter" data-column="received_date"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="inbound_note" placeholder="필터"></th>
+                                <th><input type="date" class="form-control form-control-sm itma-filter" data-column="released_date"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="outbound_note" placeholder="필터"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="storage_location" placeholder="필터"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="detail_note" placeholder="필터"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="sales_rep" placeholder="필터"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="input_at" placeholder="필터"></th>
+                                <th><input class="form-control form-control-sm itma-filter" data-column="updated_at" placeholder="필터"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itmaTableBody">
+                            <tr>
+                                <td colspan="13" class="text-muted py-4">데이터를 불러오는 중입니다...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>

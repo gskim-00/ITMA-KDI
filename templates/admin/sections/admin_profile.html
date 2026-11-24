@@ -1,0 +1,42 @@
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="bi bi-exclamation-triangle-fill text-danger"></i> 관리자 계정 수정
+        </h2>
+        <p class="section-description">
+            관리자계정의 ID와 비밀번호를 변경합니다.
+        </p>
+    </div>
+    <div class="section-body">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <p class="text-muted small mb-4">관리자 ID와 비밀번호를 변경합니다. 변경 즉시 새로운 정보가 적용됩니다.</p>
+                <form action="{{ url_for('admin.update_admin') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="mb-3">
+                        <label class="form-label">관리자 ID</label>
+                        <input type="text" name="new_admin_id" class="form-control"
+                            value="{{ session['username'] }}" required>
+                        <small class="text-muted">관리자 ID가 즉시 변경됨에 따라 주의 요청</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">새 비밀번호</label>
+                        <input type="password" name="new_password" class="form-control" autocomplete="new-password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">비밀번호 확인</label>
+                        <input type="password" name="confirm_password" class="form-control" autocomplete="new-password" required>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 저장
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise"></i> 초기화
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
