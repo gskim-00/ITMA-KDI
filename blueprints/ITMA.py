@@ -2486,32 +2486,60 @@ def _form_value_text(column, value):
     return str(value)
 
 
-def _save_asset_form_spec_values(cur, asset_id, category, spec_in, now_ts, actor_name):
-    """추가/수정 화면의 스펙 값 저장. 현재 카테고리의 활성 스펙 폼 항목만 반영하고 변경 여부를 반환"""
-    if not isinstance(spec_in, dict) or not spec_in or not _supports_dynamic_spec_forms(category):
+def _save_asset_form_spec_values(cur, asset_id, category, spec_in, now_ts, actor_name, spec_form_id=None):
+    """추가/수정 화면의 스펙 값 저장. 현재 카테고리의 활성 스펙 폼 항목만 반영하고 변경 여부를 반환
+
+    spec_form_id가 있으면 그 폼의 항목만 저장하고, 이 자산에 저장된 다른 스펙 폼 연결 값은 삭제한다.
+    """
+    if not isinstance(spec_in, dict) or not _supports_dynamic_spec_forms(category):
         return False
+    try:
+        spec_form_id = int(spec_form_id) if spec_form_id not in (None, "", 0, "0") else None
+    except (TypeError, ValueError):
+        spec_form_id = None
     cur.execute(
         """
-        SELECT sfi.id, sfi.spec_label, sfi.display_order
+        SELECT sfi.id, sfi.spec_label, sfi.display_order, sfi.form_id
         FROM itma_spec_form_items sfi
         JOIN itma_spec_forms sf ON sf.id = sfi.form_id
         WHERE sf.category_key = %s AND sf.is_active = TRUE
         """,
         (_normalize_category_key(category),),
     )
-    form_items = {row[0]: (row[1] or "", row[2] or 0) for row in cur.fetchall()}
-    if not form_items:
-        return False
+    category_items = cur.fetchall()
+    if spec_form_id is not None and not any(row[3] == spec_form_id for row in category_items):
+        # 다른 카테고리이거나 비활성인 폼은 선택하지 않은 것으로 처리
+        spec_form_id = None
+    form_items = {
+        row[0]: (row[1] or "", row[2] or 0)
+        for row in category_items
+        if spec_form_id is None or row[3] == spec_form_id
+    }
+    before_summary, after_summary = {}, {}
+    if spec_form_id is not None:
+        # 선택한 폼 외의 스펙 폼 연결 값 삭제 (자유 입력 스펙 행은 유지)
+        cur.execute(
+            """
+            DELETE FROM itma_asset_spec_items
+            WHERE asset_id = %s AND source_form_item_id IS NOT NULL
+              AND NOT (source_form_item_id = ANY(%s::int[]))
+            RETURNING spec_label, spec_value
+            """,
+            (asset_id, list(form_items)),
+        )
+        for label, value in cur.fetchall():
+            if value:
+                before_summary[label or ""] = value
+                after_summary[label or ""] = ""
     cur.execute(
         """
         SELECT source_form_item_id, spec_value FROM itma_asset_spec_items
-        WHERE asset_id = %s AND source_form_item_id = ANY(%s)
+        WHERE asset_id = %s AND source_form_item_id = ANY(%s::int[])
         """,
         (asset_id, list(form_items)),
     )
     old_values = {row[0]: row[1] or "" for row in cur.fetchall()}
-    before_summary, after_summary = {}, {}
-    for raw_key, raw_value in spec_in.items():
+    for raw_key, raw_value in (spec_in.items() if form_items else []):
         try:
             form_item_id = int(raw_key)
         except (TypeError, ValueError):
@@ -2880,7 +2908,9 @@ def save_asset_form():
                     )
 
         # 상세 스펙 폼 값 (선택한 카테고리의 스펙 폼 항목)
-        _save_asset_form_spec_values(cur, asset_pk, new_base["category"], spec_in, now_ts, actor_name)
+        _save_asset_form_spec_values(
+            cur, asset_pk, new_base["category"], spec_in, now_ts, actor_name, spec_form_id=data.get("spec_form_id")
+        )
 
         conn.commit()
         cur.execute("SELECT asset_code FROM itma_assets WHERE id = %s", (asset_pk,))

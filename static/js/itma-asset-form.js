@@ -32,7 +32,10 @@
             this.customColumns = [];
             // 상세 스펙: 카테고리별 스펙 폼 캐시, 입력값(키: 스펙 폼 항목 id)
             this.specFormCache = new Map();
+            this.specForms = [];
             this.specValues = {};
+            this.savedSpec = {};
+            this.selectedSpecFormId = "";
         }
 
         async init() {
@@ -162,7 +165,7 @@
         }
 
         async loadSpecForms() {
-            // 카테고리를 바꿔도 이미 입력한 값은 항목 id 기준으로 유지
+            // 카테고리·스펙 폼을 바꿔도 이미 입력한 값은 항목 id 기준으로 유지
             this.captureSpecValues();
             const categoryKey = this.selectedCategoryKey();
             let forms = [];
@@ -173,34 +176,79 @@
                     if (!response.ok || !data.success) throw new Error(data.message || "상세 스펙 폼을 불러오지 못했습니다.");
                     this.specFormCache.set(categoryKey, Array.isArray(data.forms) ? data.forms : []);
                 }
-                forms = this.specFormCache.get(categoryKey);
+                forms = this.specFormCache.get(categoryKey).filter((form) => Array.isArray(form.items) && form.items.length);
             }
-            this.renderSpecFields(forms);
+            this.specForms = forms;
+            if (!forms.some((form) => String(form.id) === String(this.selectedSpecFormId))) {
+                this.selectedSpecFormId = this.defaultSpecFormId(forms);
+            }
+            this.renderSpecFields();
         }
 
-        renderSpecFields(forms) {
+        savedSpecFormId(forms) {
+            // 저장된 값이 가장 많은 폼 = 이 자산이 사용 중인 폼
+            let best = "";
+            let bestCount = 0;
+            forms.forEach((form) => {
+                const count = form.items.filter((item) => String(this.savedSpec[String(item.id)] || "").trim()).length;
+                if (count > bestCount) {
+                    best = String(form.id);
+                    bestCount = count;
+                }
+            });
+            return best;
+        }
+
+        defaultSpecFormId(forms) {
+            const saved = this.savedSpecFormId(forms);
+            if (saved) return saved;
+            return forms.length === 1 ? String(forms[0].id) : "";
+        }
+
+        renderSpecFields() {
             const section = document.getElementById("itmaFormSpecSection");
             const wrap = document.getElementById("itmaFormSpecFields");
             if (!section || !wrap) return;
-            const visibleForms = (forms || []).filter((form) => Array.isArray(form.items) && form.items.length);
-            section.classList.toggle("d-none", !visibleForms.length);
-            wrap.innerHTML = visibleForms.map((form) => `
-                <div class="itma-form-spec-group">
-                    <div class="itma-form-spec-group-title">${escapeHtml(form.form_name || "")}</div>
-                    <div class="row g-3">
-                        ${form.items.map((item) => {
-                            const id = escapeHtml(String(item.id));
-                            return `
-                            <div class="col-md-4">
-                                <label class="form-label" for="s_${id}">${escapeHtml(item.label)}</label>
-                                <input class="form-control" id="s_${id}" data-group="spec" data-field="${id}" maxlength="500" value="${escapeHtml(this.specValues[String(item.id)] ?? "")}" placeholder="${escapeHtml(item.value || "")}">
-                            </div>`;
-                        }).join("")}
-                    </div>
+            const forms = this.specForms || [];
+            section.classList.toggle("d-none", !forms.length);
+            const selected = forms.find((form) => String(form.id) === String(this.selectedSpecFormId)) || null;
+            const savedFormId = this.savedSpecFormId(forms);
+            const hasSavedValues = Object.values(this.savedSpec || {}).some((value) => String(value || "").trim());
+            // 다른 폼으로 바꾸면 저장 시 이전 폼 값이 삭제됨을 안내
+            const savedForm = forms.find((form) => String(form.id) === savedFormId);
+            const showWarning = selected && hasSavedValues && String(selected.id) !== savedFormId;
+            const warningText = savedForm
+                ? `저장하면 기존 스펙 폼 '${savedForm.form_name || ""}'에 입력된 값은 삭제됩니다.`
+                : "저장하면 이 자산에 입력되어 있던 기존 스펙 값은 삭제됩니다.";
+            const options = ['<option value="">스펙 폼 선택</option>'].concat(forms.map((form) => (
+                `<option value="${escapeHtml(String(form.id))}"${selected && String(form.id) === String(selected.id) ? " selected" : ""}>${escapeHtml(form.form_name || "")}</option>`
+            )));
+            wrap.innerHTML = `
+                <div class="itma-form-spec-toolbar">
+                    <label class="form-label mb-0" for="itmaFormSpecFormSelect">스펙 폼</label>
+                    <select class="form-select form-select-sm" id="itmaFormSpecFormSelect">${options.join("")}</select>
                 </div>
-            `).join("");
+                <div class="alert alert-warning py-1 px-2 small mt-2 mb-0${showWarning ? "" : " d-none"}" role="status"><i class="bi bi-exclamation-triangle"></i> ${escapeHtml(warningText)}</div>
+                ${selected ? `
+                <div class="row g-3 mt-1">
+                    ${selected.items.map((item) => {
+                        const id = escapeHtml(String(item.id));
+                        return `
+                        <div class="col-md-4">
+                            <label class="form-label" for="s_${id}">${escapeHtml(item.label)}</label>
+                            <input class="form-control" id="s_${id}" data-group="spec" data-field="${id}" maxlength="500" value="${escapeHtml(this.specValues[String(item.id)] ?? "")}" placeholder="${escapeHtml(item.value || "")}">
+                        </div>`;
+                    }).join("")}
+                </div>` : '<p class="small text-muted mt-2 mb-0">사용할 스펙 폼을 선택하면 항목이 표시됩니다.</p>'}
+            `;
+            const select = document.getElementById("itmaFormSpecFormSelect");
+            select?.addEventListener("change", () => {
+                this.captureSpecValues();
+                this.selectedSpecFormId = select.value;
+                this.renderSpecFields();
+            });
             if (!this.canEdit) {
-                wrap.querySelectorAll("input").forEach((input) => { input.disabled = true; });
+                wrap.querySelectorAll("input, select").forEach((el) => { el.disabled = true; });
             }
         }
 
@@ -239,7 +287,8 @@
                 const el = this.field("custom", name);
                 if (el) el.value = value ?? "";
             });
-            this.specValues = { ...(item.spec || {}) };
+            this.savedSpec = { ...(item.spec || {}) };
+            this.specValues = { ...this.savedSpec };
             this.form.querySelectorAll('[data-group="spec"][data-field]').forEach((el) => {
                 el.value = this.specValues[el.dataset.field] ?? "";
             });
@@ -283,6 +332,7 @@
                 if (group === "custom" && el.disabled) return;
                 payload[group][el.dataset.field] = String(el.value ?? "").trim();
             });
+            payload.spec_form_id = this.specForms.length ? (this.selectedSpecFormId || null) : null;
             return payload;
         }
 
@@ -369,6 +419,8 @@
                 }
                 toast(message, "success");
                 await this.loadAsset();
+                // 저장된 값 기준으로 스펙 영역 다시 표시 (폼 변경 안내 해제)
+                this.renderSpecFields();
                 this.initialSnapshot = this.snapshot();
             } catch (error) {
                 this.showError(error.message);

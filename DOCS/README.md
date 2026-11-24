@@ -26,3 +26,4 @@
 | PLAN-20261117-01 | 상단 메뉴 '자산 관리'·'관리화면' 드롭다운 전환 | 진행중 | (1.2.1 예정) | [ACTIVE/PLAN-20261117-01_navbar-dropdown.md](ACTIVE/PLAN-20261117-01_navbar-dropdown.md) |
 | PLAN-20261124-01 | 자산 목록 스펙 폼 컬럼명을 항목명만 표시 | 완료 | (1.2.2 예정) | [COMPLETE/PLAN-20261124-01_spec-column-label.md](COMPLETE/PLAN-20261124-01_spec-column-label.md) |
 | PLAN-20261124-02 | 자산 추가/수정 화면에서 상세 스펙 폼 입력 | 완료 | (1.3.0 예정) | [COMPLETE/PLAN-20261124-02_asset-form-spec-fields.md](COMPLETE/PLAN-20261124-02_asset-form-spec-fields.md) |
+| PLAN-20261124-03 | 자산 추가/수정 화면 상세 스펙 폼 선택 | 완료 | (1.3.1 예정) | [COMPLETE/PLAN-20261124-03_spec-form-select.md](COMPLETE/PLAN-20261124-03_spec-form-select.md) |

@@ -6,6 +6,14 @@ ONE ITMA 변경 이력입니다. 버전 규칙과 작성 양식은 `AGENTS.md`�
 ## [Unreleased]
 - (다음 변경 사항을 여기에 먼저 적고, 배포 시 버전 번호를 붙입니다)
 
+### 1.3.1 예정 ([PLAN-20261124-03]) — 1.3.0 확정 후 버전 부여
+#### 변경
+- itma: 자산 추가/수정 화면 `상세 스펙`을 카테고리의 모든 스펙 폼 표시 → 스펙 폼 선택 후 선택한 폼 항목만 표시로 변경. 기본 선택은 저장된 값이 있는 폼, 폼이 1개면 자동 선택. 다른 폼 선택 시 이전 폼 값 삭제 안내 (`static/js/itma-asset-form.js`, `static/css/itma.css`)
+- itma: `/assets/save`에 `spec_form_id` 추가 — 선택한 폼 항목만 저장, 이 자산의 다른 스펙 폼 연결 값은 삭제하고 이력 기록 (`blueprints/ITMA.py` `_save_asset_form_spec_values`)
+- `?v=`: `itma.css`·`itma-asset-form.js` 20261124b
+#### 검증
+- 폼 A 저장 → 폼 B 선택 저장 시 A 값 삭제·B 값 저장·이력 기록, 다른 폼 항목 값 무시, 잘못된 폼 id 처리 (컨테이너 내부, 롤백)
+
 ### 1.3.0 예정 ([PLAN-20261124-02]) — 1.2.x 확정 후 버전 부여
 #### 추가
 - itma: 자산 추가/수정 화면에 `상세 스펙` 영역 추가 — 선택한 카테고리의 스펙 폼 항목(예: CPU, 메모리)을 폼별로 표시·입력, 카테고리 변경 시 해당 폼으로 다시 표시 (`templates/ITMA/asset_form.html`, `static/js/itma-asset-form.js`, `static/css/itma.css`)
