@@ -6,6 +6,14 @@ ONE ITMA 변경 이력입니다. 버전 규칙과 작성 양식은 `AGENTS.md`�
 ## [Unreleased]
 - (다음 변경 사항을 여기에 먼저 적고, 배포 시 버전 번호를 붙입니다)
 
+### 1.3.0 예정 ([PLAN-20261124-02]) — 1.2.x 확정 후 버전 부여
+#### 추가
+- itma: 자산 추가/수정 화면에 `상세 스펙` 영역 추가 — 선택한 카테고리의 스펙 폼 항목(예: CPU, 메모리)을 폼별로 표시·입력, 카테고리 변경 시 해당 폼으로 다시 표시 (`templates/ITMA/asset_form.html`, `static/js/itma-asset-form.js`, `static/css/itma.css`)
+- itma: `form-data` 응답에 스펙 값(`spec`) 추가, `/assets/save`에서 스펙 값 저장 — 현재 카테고리의 활성 스펙 폼 항목만 반영, 빈 값은 삭제, 변경 시 `asset_details` 이력 기록 (`blueprints/ITMA.py` `_save_asset_form_spec_values`)
+- `?v=`: `itma.css`·`itma-asset-form.js` 20261124a
+#### 검증
+- 스펙 폼 조회·수정 화면 값 조회 API 200, 저장 헬퍼 추가·변경 없음·수정·비우기·다른 카테고리/잘못된 항목 무시·이력 기록 (컨테이너 내부, 롤백)
+
 ### 1.2.2 예정 ([PLAN-20261124-01]) — 1.2.1 확정 후 버전 부여
 #### 변경
 - itma: 자산 목록의 스펙 폼 컬럼명을 `카테고리 / 폼명 / 항목명` 대신 스펙 폼에서 입력한 항목명(예: `CPU`)만 표시 (`blueprints/ITMA.py` `_load_visible_spec_columns`)

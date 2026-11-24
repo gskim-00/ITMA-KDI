@@ -4,7 +4,7 @@
 
 {% block navbar_title %}ONE ITMA{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/itma.css') }}?v=20261112a">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/itma.css') }}?v=20261124a">
 {% endblock %}
 
 {% block sidebar %}{% endblock %}
@@ -132,6 +132,12 @@
             </div>
         </section>
 
+        <section class="itma-form-section d-none" id="itmaFormSpecSection">
+            <h6 class="itma-form-section-title"><span class="itma-form-dot dot-spec"></span>상세 스펙</h6>
+            <p class="small text-muted mb-2">선택한 카테고리에 등록된 상세 스펙 폼 항목입니다. 항목 구성은 관리자 화면의 카테고리 관리에서 변경할 수 있습니다.</p>
+            <div id="itmaFormSpecFields"></div>
+        </section>
+
         <section class="itma-form-section d-none" id="itmaFormCustomSection">
             <h6 class="itma-form-section-title"><span class="itma-form-dot dot-custom"></span>사용자 정의 컬럼</h6>
             <p class="small text-muted d-none mb-2" id="itmaFormCustomNotice"><i class="bi bi-lock"></i> 사용자 정의 컬럼은 컬럼 관리 권한이 있는 계정만 수정할 수 있습니다.</p>
@@ -153,5 +159,5 @@
 <script>
 window.itmaInitialPermissions = {{ itma_permissions|tojson|safe if itma_permissions else '{}' }};
 </script>
-<script src="{{ url_for('static', filename='js/itma-asset-form.js') }}?v=20261112a"></script>
+<script src="{{ url_for('static', filename='js/itma-asset-form.js') }}?v=20261124a"></script>
 {% endblock %}

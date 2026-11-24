@@ -30,6 +30,9 @@
             this.saving = false;
             this.initialSnapshot = "";
             this.customColumns = [];
+            // 상세 스펙: 카테고리별 스펙 폼 캐시, 입력값(키: 스펙 폼 항목 id)
+            this.specFormCache = new Map();
+            this.specValues = {};
         }
 
         async init() {
@@ -47,6 +50,9 @@
                 this.save(false);
             });
             this.form.addEventListener("input", (e) => this.clearFieldError(e.target));
+            this.field("base", "category")?.addEventListener("change", () => {
+                this.loadSpecForms().catch((error) => this.showError(error.message));
+            });
             window.addEventListener("beforeunload", (e) => {
                 if (!this.isDirty()) return;
                 e.preventDefault();
@@ -60,6 +66,7 @@
                 } else {
                     this.setUsageDefault();
                 }
+                await this.loadSpecForms();
             } catch (error) {
                 this.showError(error.message || "화면을 불러오지 못했습니다.");
             }
@@ -143,6 +150,60 @@
             });
         }
 
+        selectedCategoryKey() {
+            const option = this.field("base", "category")?.selectedOptions?.[0];
+            return String(option?.dataset?.categoryKey || "").trim();
+        }
+
+        captureSpecValues() {
+            this.form.querySelectorAll('[data-group="spec"][data-field]').forEach((el) => {
+                this.specValues[el.dataset.field] = String(el.value ?? "");
+            });
+        }
+
+        async loadSpecForms() {
+            // 카테고리를 바꿔도 이미 입력한 값은 항목 id 기준으로 유지
+            this.captureSpecValues();
+            const categoryKey = this.selectedCategoryKey();
+            let forms = [];
+            if (categoryKey && !["software", "license"].includes(categoryKey)) {
+                if (!this.specFormCache.has(categoryKey)) {
+                    const response = await fetch(`/itma/spec-forms?category=${encodeURIComponent(categoryKey)}`, { headers: { Accept: "application/json" } });
+                    const data = await response.json();
+                    if (!response.ok || !data.success) throw new Error(data.message || "상세 스펙 폼을 불러오지 못했습니다.");
+                    this.specFormCache.set(categoryKey, Array.isArray(data.forms) ? data.forms : []);
+                }
+                forms = this.specFormCache.get(categoryKey);
+            }
+            this.renderSpecFields(forms);
+        }
+
+        renderSpecFields(forms) {
+            const section = document.getElementById("itmaFormSpecSection");
+            const wrap = document.getElementById("itmaFormSpecFields");
+            if (!section || !wrap) return;
+            const visibleForms = (forms || []).filter((form) => Array.isArray(form.items) && form.items.length);
+            section.classList.toggle("d-none", !visibleForms.length);
+            wrap.innerHTML = visibleForms.map((form) => `
+                <div class="itma-form-spec-group">
+                    <div class="itma-form-spec-group-title">${escapeHtml(form.form_name || "")}</div>
+                    <div class="row g-3">
+                        ${form.items.map((item) => {
+                            const id = escapeHtml(String(item.id));
+                            return `
+                            <div class="col-md-4">
+                                <label class="form-label" for="s_${id}">${escapeHtml(item.label)}</label>
+                                <input class="form-control" id="s_${id}" data-group="spec" data-field="${id}" maxlength="500" value="${escapeHtml(this.specValues[String(item.id)] ?? "")}" placeholder="${escapeHtml(item.value || "")}">
+                            </div>`;
+                        }).join("")}
+                    </div>
+                </div>
+            `).join("");
+            if (!this.canEdit) {
+                wrap.querySelectorAll("input").forEach((input) => { input.disabled = true; });
+            }
+        }
+
         setUsageDefault() {
             const usageSelect = this.field("base", "usage_status");
             if (usageSelect && !usageSelect.value) usageSelect.value = "사용";
@@ -178,6 +239,10 @@
                 const el = this.field("custom", name);
                 if (el) el.value = value ?? "";
             });
+            this.specValues = { ...(item.spec || {}) };
+            this.form.querySelectorAll('[data-group="spec"][data-field]').forEach((el) => {
+                el.value = this.specValues[el.dataset.field] ?? "";
+            });
 
             const codeBadge = document.getElementById("itmaFormAssetCode");
             if (codeBadge && item.asset_code) {
@@ -212,7 +277,7 @@
         }
 
         collect() {
-            const payload = { id: this.assetId, base: {}, details: {}, custom: {} };
+            const payload = { id: this.assetId, base: {}, details: {}, custom: {}, spec: {} };
             this.form.querySelectorAll("[data-group][data-field]").forEach((el) => {
                 const group = el.dataset.group;
                 if (group === "custom" && el.disabled) return;

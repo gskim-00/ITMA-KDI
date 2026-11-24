@@ -2486,6 +2486,78 @@ def _form_value_text(column, value):
     return str(value)
 
 
+def _save_asset_form_spec_values(cur, asset_id, category, spec_in, now_ts, actor_name):
+    """추가/수정 화면의 스펙 값 저장. 현재 카테고리의 활성 스펙 폼 항목만 반영하고 변경 여부를 반환"""
+    if not isinstance(spec_in, dict) or not spec_in or not _supports_dynamic_spec_forms(category):
+        return False
+    cur.execute(
+        """
+        SELECT sfi.id, sfi.spec_label, sfi.display_order
+        FROM itma_spec_form_items sfi
+        JOIN itma_spec_forms sf ON sf.id = sfi.form_id
+        WHERE sf.category_key = %s AND sf.is_active = TRUE
+        """,
+        (_normalize_category_key(category),),
+    )
+    form_items = {row[0]: (row[1] or "", row[2] or 0) for row in cur.fetchall()}
+    if not form_items:
+        return False
+    cur.execute(
+        """
+        SELECT source_form_item_id, spec_value FROM itma_asset_spec_items
+        WHERE asset_id = %s AND source_form_item_id = ANY(%s)
+        """,
+        (asset_id, list(form_items)),
+    )
+    old_values = {row[0]: row[1] or "" for row in cur.fetchall()}
+    before_summary, after_summary = {}, {}
+    for raw_key, raw_value in spec_in.items():
+        try:
+            form_item_id = int(raw_key)
+        except (TypeError, ValueError):
+            continue
+        if form_item_id not in form_items:
+            continue
+        value = _clean_text(raw_value) or ""
+        old_value = old_values.get(form_item_id, "")
+        if value == old_value:
+            continue
+        label, display_order = form_items[form_item_id]
+        before_summary[label] = old_value
+        after_summary[label] = value
+        if value == "":
+            cur.execute(
+                "DELETE FROM itma_asset_spec_items WHERE asset_id = %s AND source_form_item_id = %s",
+                (asset_id, form_item_id),
+            )
+            continue
+        cur.execute(
+            """
+            INSERT INTO itma_asset_spec_items
+                (asset_id, spec_label, spec_value, display_order, source_form_item_id, updated_at, updated_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (asset_id, source_form_item_id) WHERE source_form_item_id IS NOT NULL
+            DO UPDATE SET spec_label = EXCLUDED.spec_label, spec_value = EXCLUDED.spec_value,
+                updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by
+            """,
+            (asset_id, label, value, display_order, form_item_id, now_ts, actor_name),
+        )
+    if not after_summary:
+        return False
+    # 이력 컬럼명은 고정값(asset_details)만 사용 — 스펙 항목명은 값(JSON)에만 기록
+    _insert_history(
+        cur,
+        asset_id=asset_id,
+        action="update",
+        actor=actor_name,
+        changed_column="asset_details",
+        before_value=json.dumps({"상세 스펙": before_summary}, ensure_ascii=False),
+        after_value=json.dumps({"상세 스펙": after_summary}, ensure_ascii=False),
+    )
+    cur.execute("UPDATE itma_assets SET updated_at = %s, updated_by = %s WHERE id = %s", (now_ts, actor_name, asset_id))
+    return True
+
+
 @itma_bp.route("/assets/<int:asset_id>/form-data", methods=["GET"])
 def get_asset_form_data(asset_id):
     """추가/수정 화면용 단건 조회 (기본 정보 + 장비 정보 + 사용자 정의 컬럼)"""
@@ -2521,6 +2593,15 @@ def get_asset_form_data(asset_id):
             serial_row = cur.fetchone()
             details["serial_number"] = (serial_row[0] or "") if serial_row else ""
         custom_values = _load_custom_column_values(cur, [asset_id]).get(str(asset_id), {})
+        # 스펙 폼 항목에 연결된 값만 반환 (키: 스펙 폼 항목 id)
+        cur.execute(
+            """
+            SELECT source_form_item_id, spec_value FROM itma_asset_spec_items
+            WHERE asset_id = %s AND source_form_item_id IS NOT NULL
+            """,
+            (asset_id,),
+        )
+        spec_values = {str(spec_row[0]): spec_row[1] or "" for spec_row in cur.fetchall()}
         return jsonify(
             {
                 "success": True,
@@ -2533,6 +2614,7 @@ def get_asset_form_data(asset_id):
                     "base": base,
                     "details": details,
                     "custom": custom_values,
+                    "spec": spec_values,
                 },
                 "can_edit": _can_edit_category(permissions, base.get("category") or ""),
             }
@@ -2604,6 +2686,7 @@ def save_asset_form():
     base_in = data.get("base") or {}
     details_in = data.get("details") or {}
     custom_in = data.get("custom") or {}
+    spec_in = data.get("spec") or {}
 
     usage_raw = _clean_text(base_in.get("usage_status")) or ""
     if usage_raw and not _normalize_usage_status(usage_raw):
@@ -2795,6 +2878,9 @@ def save_asset_form():
                         """,
                         (asset_pk, key, value, now_ts, actor_name),
                     )
+
+        # 상세 스펙 폼 값 (선택한 카테고리의 스펙 폼 항목)
+        _save_asset_form_spec_values(cur, asset_pk, new_base["category"], spec_in, now_ts, actor_name)
 
         conn.commit()
         cur.execute("SELECT asset_code FROM itma_assets WHERE id = %s", (asset_pk,))
