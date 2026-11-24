@@ -24,3 +24,4 @@
 | PLAN-20261112-01 | 엑셀 일괄등록 양식을 자산관리 화면 컬럼과 동일하게 변경 | 완료 | 1.1.0 | [COMPLETE/PLAN-20261112-01_upload-template-columns.md](COMPLETE/PLAN-20261112-01_upload-template-columns.md) |
 | PLAN-20261112-02 | 화면 구성 개편·추가/수정 페이지·사업장 조회·버그 수정 | 진행중 | (1.2.0 예정) | [ACTIVE/PLAN-20261112-02_ui-restructure-and-fixes.md](ACTIVE/PLAN-20261112-02_ui-restructure-and-fixes.md) |
 | PLAN-20261117-01 | 상단 메뉴 '자산 관리'·'관리화면' 드롭다운 전환 | 진행중 | (1.2.1 예정) | [ACTIVE/PLAN-20261117-01_navbar-dropdown.md](ACTIVE/PLAN-20261117-01_navbar-dropdown.md) |
+| PLAN-20261124-01 | 자산 목록 스펙 폼 컬럼명을 항목명만 표시 | 완료 | (1.2.2 예정) | [COMPLETE/PLAN-20261124-01_spec-column-label.md](COMPLETE/PLAN-20261124-01_spec-column-label.md) |

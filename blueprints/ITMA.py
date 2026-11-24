@@ -2063,7 +2063,8 @@ def _load_visible_spec_columns(cur, permissions):
         if not _can_view_category(permissions, row[1]):
             continue
         columns.append({
-            "key": f"spec_{row[0]}", "label": f"{row[6]} / {row[3]} / {row[4]}",
+            # 컬럼명은 스펙 폼에서 입력한 항목명만 표시 (카테고리·폼명은 category_name/form_name으로 유지)
+            "key": f"spec_{row[0]}", "label": str(row[4] or "").strip() or f"{row[6]} / {row[3]}",
             "group_key": "spec", "category_key": row[1], "category_name": row[6],
             "form_id": row[2], "form_name": row[3], "form_item_id": row[0],
             "display_order": row[5] or 0, "readonly": True, "default_visible": True,
