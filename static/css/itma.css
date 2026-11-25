@@ -2231,3 +2231,17 @@ body.itma-col-resizing {
 .itma-form-back {
     color: #64748b;
 }
+
+/* 엑셀 다운로드·업로드 안내창: 반영 항목 목록 */
+.itma-excel-notice-columns {
+    max-height: 220px;
+    overflow-y: auto;
+    column-count: 2;
+    column-gap: 24px;
+    padding-left: 1.6rem;
+    margin-bottom: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}

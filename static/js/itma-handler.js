@@ -159,7 +159,10 @@ class ItmaHandler {
             this.applyGlobalSearch();
         });
         document.getElementById("btnItmaToggleFilters")?.addEventListener("click", () => this.toggleFilterPanel());
-        document.getElementById("btnOpenItmaUploadModal")?.addEventListener("click", () => this.openUploadModal());
+        document.getElementById("btnOpenItmaUploadModal")?.addEventListener("click", async () => {
+            // 업로드 전 안내창 → 확인 시 업로드 창
+            if (await this.openExcelNotice({ mode: "upload" })) this.openUploadModal();
+        });
         document.getElementById("btnItmaUploadConfirm")?.addEventListener("click", () => this.uploadExcel());
         document.getElementById("btnItmaAddRow")?.addEventListener("click", (e) => {
             e.preventDefault();
@@ -173,9 +176,7 @@ class ItmaHandler {
         document.getElementById("btnItmaTemplateDownload")?.addEventListener("click", () => {
             window.location.href = "/itma/assets/template-download";
         });
-        document.getElementById("btnItmaDownloadAll")?.addEventListener("click", () => {
-            window.location.href = "/itma/assets/download";
-        });
+        document.getElementById("btnItmaDownloadAll")?.addEventListener("click", () => this.downloadAll());
         document.getElementById("btnItmaDownloadSelected")?.addEventListener("click", () => this.downloadSelected());
         document.getElementById("btnItmaToggleColumnLegend")?.addEventListener("click", () => this.toggleColumnLegendPanel());
         document.getElementById("btnItmaColumnLegendReset")?.addEventListener("click", () => this.resetColumnLegendState());
@@ -1937,13 +1938,97 @@ renderDashboard() {
     }
 
 
-    downloadSelected() {
+    async downloadSelected() {
         if (!this.selectedIds.size) {
             alert("다운로드할 항목을 선택해주세요.");
             return;
         }
+        const preset = await this.openExcelNotice({ mode: "download", scopeText: `대상 자산: 선택 항목 ${this.selectedIds.size}건` });
+        if (!preset) return;
         const ids = [...this.selectedIds].join(",");
-        window.location.href = `/itma/assets/download-selected?ids=${encodeURIComponent(ids)}`;
+        window.location.href = `/itma/assets/download-selected?ids=${encodeURIComponent(ids)}&${this.buildExcelColumnQuery(preset)}`;
+    }
+
+    async downloadAll() {
+        const preset = await this.openExcelNotice({ mode: "download", scopeText: "대상 자산: 모든 항목 (조회 권한이 있는 전체 자산)" });
+        if (!preset) return;
+        window.location.href = `/itma/assets/download?${this.buildExcelColumnQuery(preset)}`;
+    }
+
+    getVisibleExcelColumns() {
+        // 자산 목록 '컬럼 표시 설정'에 켜 둔 항목을 화면 순서대로 (관리 버튼 컬럼 제외)
+        this.normalizeColumnOrder();
+        const definitions = new Map(this.getAllColumnDefinitions().map((column) => [column.key, column]));
+        return (this.columnLegendState.order || [])
+            .filter((key) => key !== "actions" && definitions.has(key) && this.columnLegendState.visible[key] !== false)
+            .map((key) => definitions.get(key));
+    }
+
+    buildExcelColumnQuery(preset) {
+        if (preset === "basic") return "preset=basic";
+        const keys = this.getVisibleExcelColumns().map((column) => column.key);
+        return `columns=${encodeURIComponent(keys.join(","))}`;
+    }
+
+    openExcelNotice({ mode, scopeText = "" }) {
+        // 엑셀 다운로드·업로드 전 안내창. 결과: 다운로드 "custom"/"basic", 업로드 "upload", 취소 null
+        const isUpload = mode === "upload";
+        const modalEl = document.getElementById("itmaExcelNoticeModal");
+        if (!modalEl || typeof bootstrap === "undefined") {
+            const ok = window.confirm("자산 목록 그대로 엑셀에 반영됩니다. 계속하시겠습니까?");
+            return Promise.resolve(ok ? (isUpload ? "upload" : "custom") : null);
+        }
+        // 기본 형식 26개 (서버 ITMA_UPLOAD_TEMPLATE_COLUMNS와 같은 이름·순서)
+        const basicLabels = [
+            "번호", "카테고리", "사업장", "자산번호", "제조사", "품명", "입고일", "입고 메모", "출고일", "출고 메모",
+            "보관 위치", "상세 메모", "담당자", "운영상태", "제조년월", "수정 일시", "수정자",
+            "그룹", "사용자", "직급", "네트워크 구분", "IP/Subnet", "Mac address",
+            "장비명", "OS/Version", "Serial Number",
+        ];
+        const el = (id) => document.getElementById(id);
+        const radios = Array.from(modalEl.querySelectorAll('input[name="itmaExcelPreset"]'));
+        const confirmBtn = el("btnItmaExcelNoticeConfirm");
+        const selectedPreset = () => (isUpload ? "basic" : (radios.find((radio) => radio.checked)?.value || "custom"));
+
+        el("itmaExcelNoticeTitle").textContent = isUpload ? "엑셀 업로드" : "엑셀 다운로드";
+        el("itmaExcelNoticeMessage").textContent = isUpload
+            ? "엑셀 파일의 내용이 자산 목록에 그대로 등록됩니다."
+            : "엑셀에는 자산 목록과 같은 항목·값이 그대로 반영됩니다.";
+        el("itmaExcelNoticeScope").textContent = scopeText;
+        el("itmaExcelNoticeScope").classList.toggle("d-none", !scopeText);
+        el("itmaExcelNoticePresetGroup").classList.toggle("d-none", isUpload);
+        el("itmaExcelNoticeFoot").textContent = isUpload
+            ? "기본 형식 항목과 현재 서버에 있는 상세 스펙·사용자 정의 컬럼만 반영되고, 삭제되었거나 알 수 없는 컬럼은 무시됩니다. 기존 자산은 수정되지 않고 새 자산으로 등록됩니다."
+            : "번호는 엑셀 안에서 1부터 다시 매겨집니다. 사용자 지정 항목은 자산 목록의 '컬럼 표시 설정'에서 바꿀 수 있습니다.";
+        confirmBtn.textContent = isUpload ? "계속" : "다운로드";
+        radios.forEach((radio) => { radio.checked = radio.value === "custom"; });
+
+        const renderColumns = () => {
+            const labels = selectedPreset() === "custom" ? this.getVisibleExcelColumns().map((column) => column.label) : basicLabels;
+            el("itmaExcelNoticeColumnsTitle").textContent = isUpload
+                ? `업로드 템플릿 기본 형식 (${labels.length}개)`
+                : `엑셀에 들어갈 항목 (${labels.length}개, 왼쪽부터 순서대로)`;
+            el("itmaExcelNoticeColumns").innerHTML = labels.map((label) => `<li>${itmaEscapeHtml(label)}</li>`).join("");
+            confirmBtn.disabled = !labels.length;
+        };
+
+        return new Promise((resolve) => {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            let result = null;
+            const onConfirm = () => {
+                result = isUpload ? "upload" : selectedPreset();
+                modal.hide();
+            };
+            radios.forEach((radio) => radio.addEventListener("change", renderColumns));
+            confirmBtn.addEventListener("click", onConfirm);
+            modalEl.addEventListener("hidden.bs.modal", () => {
+                radios.forEach((radio) => radio.removeEventListener("change", renderColumns));
+                confirmBtn.removeEventListener("click", onConfirm);
+                resolve(result);
+            }, { once: true });
+            renderColumns();
+            modal.show();
+        });
     }
 
 

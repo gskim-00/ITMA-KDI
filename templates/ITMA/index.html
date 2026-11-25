@@ -4,7 +4,7 @@
 
 {% block navbar_title %}ONE ITMA{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/itma.css') }}?v=20261124b">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/itma.css') }}?v=20261125b">
 {% endblock %}
 
 {% block sidebar %}{% endblock %}
@@ -709,5 +709,5 @@
 <script>
 window.itmaInitialPermissions = {{ itma_permissions|tojson|safe if itma_permissions else '{}' }};
 </script>
-<script src="{{ url_for('static', filename='js/itma-handler.js') }}?v=20261112a"></script>
+<script src="{{ url_for('static', filename='js/itma-handler.js') }}?v=20261125b"></script>
 {% endblock %}

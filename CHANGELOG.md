@@ -6,6 +6,25 @@ ONE ITMA 변경 이력입니다. 버전 규칙과 작성 양식은 `AGENTS.md`�
 ## [Unreleased]
 - (다음 변경 사항을 여기에 먼저 적고, 배포 시 버전 번호를 붙입니다)
 
+## [1.3.0] - 2026-11-25 ([PLAN-20261125-01])
+### 추가
+- itma: 엑셀 다운로드 안내창 — 다운로드 › 선택 항목/모든 항목 선택 후 안내창에서 **사용자 지정 항목**(자산 목록에 표시된 항목·순서 그대로, 관리 버튼 제외) 또는 **기본 항목**(기본 형식 26개) 선택, 들어갈 항목 목록 표시 (`static/js/itma-handler.js` `openExcelNotice`·`downloadAll`·`downloadSelected`, `templates/ITMA/sections/itma_page.html`, `static/css/itma.css`)
+- itma: 엑셀 업로드 전 안내창 — 반영 규칙(기본 형식 + 현재 서버의 상세 스펙·사용자 정의 컬럼만, 삭제·알 수 없는 컬럼 무시) 안내 후 업로드 창 표시
+- itma: 업로드 시 상세 스펙(자산 카테고리의 스펙 폼 항목만)·사용자 정의 컬럼(컬럼 관리 권한자만) 값 저장. 다운로드 파일의 숨김 시트 `_columns`(열 → 컬럼 키)로 같은 이름 컬럼 구분, 없으면 헤더 이름으로 매칭. 결과 메시지에 저장·제외·무시 건수 (`blueprints/ITMA.py` `_match_upload_extra_columns`, `upload_assets`)
+### 변경
+- itma: 엑셀 다운로드 컬럼을 고정 양식(기본 16 + 장비 상세 26 + `상세스펙_*`) → `columns`(사용자 지정) 또는 기본 형식 26개로 변경. 헤더·값 형식은 자산 목록과 같게, **번호는 엑셀 안에서 1부터** (`_resolve_excel_columns`, `_load_excel_asset_rows`, `_build_assets_workbook`, `_send_assets_excel`)
+- itma: 상세 스펙 컬럼은 현재 활성 스펙 폼 항목만, 값은 폼 항목에 연결된 값만 — 이전 버전·삭제된 폼·직접 입력 스펙 행은 엑셀에 나오지 않음. 사용자 정의 컬럼도 현재 컬럼만
+- itma: 업로드 템플릿을 기본 형식 26개로 고정 명시, 헤더 색상 공통화 (`download_template`)
+- admin: 스펙 폼 삭제·항목 제거 저장 시 연결된 자산 값도 DB에서 함께 삭제, 확인 문구·결과 메시지에 삭제 건수, 감사 로그 기록 (`blueprints/ITMA.py` `_delete_spec_values_for_form_items`, `static/js/spec-forms-admin.js`)
+- `?v=`: `itma-handler.js`·`itma.css`·`spec-forms-admin.js` 20261125b
+### 삭제
+- itma: 고정 다운로드 양식 함수 `_rows_to_dataframe`, `_load_export_spec_columns`, `_load_export_spec_values`, `_export_spec_header` (새 함수로 대체). 다운로드에서 목록에 없는 장비 상세 17개 항목(장비상태·납품업체·유지보수·구매일시·내구연한·인증 등) 제외
+### DB
+- 스키마 변경 없음. 데이터: 스펙 폼·항목 삭제 시 연결된 `itma_asset_spec_items` 행 삭제(앱 코드). 기존 연결 끊긴 값 0건 확인 → 마이그레이션 불필요
+### 검증
+- 컨테이너 내부 통합 테스트 23/23 PASS(전 과정 롤백): 기본 항목 26컬럼·번호 1..N·`_columns` 숨김 시트, 파라미터 없음 = 기본 항목, 사용자 지정 순서·이름(관리·모르는 키 제외), 연결 없는 스펙 행 제외, 사용자 정의 값, 유효 컬럼 없음 400, 다운로드 파일 재업로드(스펙 4·사용자 정의 1 저장, `상세스펙_*` 무시), 이전 양식 업로드, 템플릿 26컬럼, 항목 제거·폼 삭제 시 값 삭제·직접 입력 행 유지·삭제한 폼 컬럼 제외
+- Python AST·`node --check`(itma-handler.js, spec-forms-admin.js) 통과
+
 ## [1.2.0] - 2026-11-25 ([PLAN-20261112-02], [PLAN-20261117-01], [PLAN-20261124-01], [PLAN-20261124-02], [PLAN-20261124-03])
 > 진행 중이던 5개 계획을 사용자 요청에 따라 1.2.0 한 버전으로 묶어 확정 (계획별 예정 버전 1.2.0·1.2.1·1.2.2·1.3.0·1.3.1)
 ### 추가

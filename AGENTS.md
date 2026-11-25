@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> 문서 버전: v1.0.2 · 최종 갱신: 2026-11-25
+> 문서 버전: v1.0.3 · 최종 갱신: 2026-11-25
 > 현재 프로그램 버전은 `VERSION` 파일, 변경 이력은 `CHANGELOG.md`, 작업 계획·로그는 `DOCS/`를 기준으로 합니다.
 
 ## 목적
@@ -53,6 +53,9 @@
 - 사용자 정의 컬럼: `/custom-columns` (조회/추가/삭제/정렬/값 수정)
 - 스펙 양식: `/spec-forms` (카테고리별 동적 스펙 폼 — `ITMA_DYNAMIC_SPEC_FORM_CATEGORIES`)
 - 엑셀: `/assets/upload`, `/assets/template-download`, `/assets/download`, `/assets/download-selected`
+  - 기본 형식 26개 고정(`ITMA_UPLOAD_TEMPLATE_COLUMNS`, 기본 정보 17 / 장비 정보 6 / 장비 상세 3) = 템플릿·'기본 항목' 다운로드
+  - 다운로드는 `columns=키,...`(목록 표시 항목 = '사용자 지정 항목') 또는 `preset=basic`, 번호는 엑셀 순번, 숨김 시트 `_columns`에 열→컬럼 키
+  - 상세 스펙·사용자 정의 컬럼은 현재 서버에 있는 것만, 스펙 값은 폼 항목 연결 값만. 스펙 폼(항목) 삭제 시 연결된 자산 값도 DB에서 삭제
 - 이력: `/history`, `/history/<id>/restore`
 - 대시보드: `/dashboard/open` → 토큰 발급 → `/dashboard/live?token=…&refresh=5|10|30|60`, 데이터 `/dashboard/data` (**토큰만으로 비로그인 접근 가능**)
 - 권한: `_require_itma_role()` + 카테고리별 `can_view`/`can_edit` (`_can_view_category`, `_can_edit_category`)

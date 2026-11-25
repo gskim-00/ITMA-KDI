@@ -166,6 +166,15 @@ def _load_asset_spec_items(cur, asset_id):
     ]
 
 
+def _delete_spec_values_for_form_items(cur, form_item_ids):
+    """삭제되는 스펙 폼 항목에 연결된 자산 스펙 값을 함께 삭제하고 삭제 건수를 반환 (직접 입력 행은 대상 아님)"""
+    ids = [int(item_id) for item_id in (form_item_ids or [])]
+    if not ids:
+        return 0
+    cur.execute("DELETE FROM itma_asset_spec_items WHERE source_form_item_id = ANY(%s::int[])", (ids,))
+    return cur.rowcount or 0
+
+
 def _serialize_spec_form_row(cur, row):
     form_id = int(row[0])
     cur.execute(
@@ -2151,7 +2160,7 @@ def _normalize_category(value):
     return text
 
 
-# 엑셀 일괄등록 양식: ITMA 자산관리 화면 기본 표시 컬럼과 동일 (기본 정보 16 / 장비 정보 6 / 장비 상세 3)
+# 엑셀 기본 형식 26개: 업로드 템플릿·'기본 항목' 다운로드 공통 (기본 정보 17 / 장비 정보 6 / 장비 상세 3)
 # (키, 헤더, 그룹, 종류) — 종류: base=itma_assets, detail=itma_asset_details, auto=자동 입력(업로드 시 무시)
 ITMA_UPLOAD_TEMPLATE_COLUMNS = [
     ("row_no", "번호", "기본 정보", "auto"),
@@ -2244,153 +2253,211 @@ def _clean_excel_text(value):
     return _clean_text(value)
 
 
-def _export_spec_header(label):
-    text = str(label or "").strip()
-    return f"상세스펙_{text}" if text else "상세스펙"
+# 엑셀 그룹별 헤더 색상 (템플릿·다운로드 공통)
+ITMA_EXCEL_GROUP_FILLS = {
+    "기본 정보": "DBEAFE",
+    "장비 정보": "DCFCE7",
+    "장비 상세": "FEF3C7",
+    "상세 스펙": "CFFAFE",
+    "사용자 정의": "EDE9FE",
+}
+ITMA_EXCEL_AUTO_FILL = "E5E7EB"
+# 엑셀 컬럼 키 매핑 숨김 시트 이름 (같은 이름의 스펙 컬럼 구분용)
+ITMA_EXCEL_COLUMN_MAP_SHEET = "_columns"
+# 자산 목록 장비 컬럼 키(detail_*) → 엑셀 기본 형식 키
+ITMA_EXCEL_LIST_DETAIL_PREFIX = "detail_"
 
 
-def _load_export_spec_columns(cur, asset_ids=None):
-    labels = []
-    seen = set()
+def _excel_basic_columns():
+    """기본 형식 26개 (업로드 템플릿·'기본 항목' 다운로드 공통)"""
+    return [
+        {"key": key, "label": label, "group": group, "kind": kind}
+        for key, label, group, kind in ITMA_UPLOAD_TEMPLATE_COLUMNS
+    ]
 
-    def add_label(value):
-        label = str(value or "").strip()
-        if not label:
-            return
-        key = label.casefold()
-        if key in seen:
-            return
+
+def _load_excel_spec_items(cur, permissions=None):
+    """현재 활성 스펙 폼 항목 (엑셀 컬럼 키: spec_<항목 id>). permissions가 있으면 조회 가능한 카테고리만"""
+    cur.execute(
+        """
+        SELECT sfi.id, sfi.spec_label, sf.category_key, sf.form_name, sfi.display_order
+        FROM itma_spec_form_items sfi
+        JOIN itma_spec_forms sf ON sf.id = sfi.form_id
+        LEFT JOIN itma_categories ic ON ic.category_key = sf.category_key
+        WHERE sf.is_active = TRUE AND TRIM(COALESCE(sfi.spec_label, '')) <> ''
+        ORDER BY COALESCE(ic.display_order, 9999), sf.id, sfi.display_order, sfi.id
+        """
+    )
+    items = []
+    for row in cur.fetchall():
+        category_key = _normalize_category_key(row[2])
+        if permissions is not None and not _can_view_category(permissions, category_key):
+            continue
+        items.append({
+            "key": f"spec_{row[0]}", "label": str(row[1]).strip(), "group": "상세 스펙", "kind": "spec",
+            "form_item_id": row[0], "category_key": category_key, "form_name": row[3] or "", "display_order": row[4] or 0,
+        })
+    return items
+
+
+def _resolve_excel_columns(cur, permissions, column_keys=None):
+    """다운로드 컬럼 구성. column_keys가 None이면 기본 형식 26개, 있으면 허용된 키만 목록 순서대로"""
+    basic = _excel_basic_columns()
+    if column_keys is None:
+        return basic
+    basic_by_key = {column["key"]: column for column in basic}
+    spec_by_key = {item["key"]: item for item in _load_excel_spec_items(cur, permissions)}
+    custom_by_key = {
+        column["key"]: {"key": column["key"], "label": column["label"] or column["key"], "group": "사용자 정의", "kind": "custom"}
+        for column in _load_custom_columns(cur)
+    }
+    resolved, seen = [], set()
+    for raw_key in column_keys:
+        key = str(raw_key or "").strip()
+        if key.startswith(ITMA_EXCEL_LIST_DETAIL_PREFIX) and key[len(ITMA_EXCEL_LIST_DETAIL_PREFIX):] in basic_by_key:
+            key = key[len(ITMA_EXCEL_LIST_DETAIL_PREFIX):]
+        column = basic_by_key.get(key) or spec_by_key.get(key) or custom_by_key.get(key)
+        # 모르는 키·삭제된 컬럼·화면 전용 컬럼(관리 버튼)은 무시
+        if not column or key in seen:
+            continue
         seen.add(key)
-        labels.append(label)
-
-    try:
-        cur.execute(
-            """
-            SELECT DISTINCT TRIM(sfi.spec_label), MIN(sfi.display_order)
-            FROM itma_spec_forms sf
-            JOIN itma_spec_form_items sfi ON sfi.form_id = sf.id
-            WHERE sf.is_active = TRUE
-              AND sfi.spec_label IS NOT NULL
-              AND TRIM(sfi.spec_label) <> ''
-            GROUP BY TRIM(sfi.spec_label)
-            ORDER BY MIN(sfi.display_order), TRIM(sfi.spec_label)
-            """
-        )
-        for row in cur.fetchall():
-            add_label(row[0])
-    except Exception:
-        pass
-
-    try:
-        params = []
-        where = ""
-        if asset_ids:
-            placeholders = ",".join(["%s"] * len(asset_ids))
-            where = f"AND asset_id IN ({placeholders})"
-            params = list(asset_ids)
-        cur.execute(
-            f"""
-            SELECT DISTINCT TRIM(spec_label), MIN(display_order)
-            FROM itma_asset_spec_items
-            WHERE spec_label IS NOT NULL
-              AND TRIM(spec_label) <> ''
-              {where}
-            GROUP BY TRIM(spec_label)
-            ORDER BY MIN(display_order), TRIM(spec_label)
-            """,
-            tuple(params),
-        )
-        for row in cur.fetchall():
-            add_label(row[0])
-    except Exception:
-        pass
-
-    return labels
+        resolved.append(column)
+    return resolved
 
 
-def _load_export_spec_values(cur, asset_ids):
-    ids = [int(asset_id) for asset_id in (asset_ids or []) if asset_id is not None]
-    if not ids:
-        return {}
-    placeholders = ",".join(["%s"] * len(ids))
+def _excel_cell_text(key, value):
+    """자산 목록과 같은 값 형식"""
+    if value is None:
+        return ""
+    if key == "usage_status":
+        return _normalize_usage_status(value) or str(value)
+    if key == "updated_at" and hasattr(value, "strftime"):
+        return value.strftime("%Y-%m-%d %H:%M")
+    return _form_value_text(key, value)
+
+
+def _load_excel_asset_rows(cur, permissions, asset_ids=None):
+    """엑셀 행 데이터: 기본 정보 + 장비 정보·장비 상세 (조회 권한 범위)"""
+    base_fields = [key for key, _l, _g, kind in ITMA_UPLOAD_TEMPLATE_COLUMNS if kind in {"base", "auto"} and key != "row_no"]
+    detail_fields = [key for key, _l, _g, kind in ITMA_UPLOAD_TEMPLATE_COLUMNS if kind == "detail"]
+    select_detail = [
+        "COALESCE(NULLIF(d.serial_number, ''), a.serial_number)" if field == "serial_number" else f"d.{field}"
+        for field in detail_fields
+    ]
+    where = ""
+    params = ()
+    if asset_ids is not None:
+        where = "WHERE a.id = ANY(%s::int[])"
+        params = ([int(asset_id) for asset_id in asset_ids],)
     cur.execute(
         f"""
-        SELECT asset_id, spec_label, spec_value
-        FROM itma_asset_spec_items
-        WHERE asset_id IN ({placeholders})
-          AND spec_label IS NOT NULL
-          AND TRIM(spec_label) <> ''
-        ORDER BY asset_id, display_order ASC, id ASC
+        SELECT a.id, {", ".join(f"a.{field}" for field in base_fields)}, {", ".join(select_detail)}
+        FROM itma_assets a
+        LEFT JOIN itma_asset_details d ON d.asset_id = a.id
+        {where}
+        ORDER BY a.input_at DESC, a.id DESC
         """,
-        tuple(ids),
+        params,
     )
-    values = {}
-    for asset_id, label, value in cur.fetchall():
-        values.setdefault(int(asset_id), {})[str(label or "").strip()] = value or ""
-    return values
+    rows = []
+    fields = base_fields + detail_fields
+    for row in cur.fetchall():
+        item = {"id": row[0]}
+        for idx, field in enumerate(fields, start=1):
+            item[field] = _excel_cell_text(field, row[idx])
+        if _can_view_category(permissions, item.get("category") or ""):
+            rows.append(item)
+    return rows
 
 
-def _rows_to_dataframe(rows, spec_columns=None, spec_values_by_asset_id=None):
-    records = []
-    spec_columns = list(spec_columns or [])
-    spec_values_by_asset_id = spec_values_by_asset_id or {}
+def _build_assets_workbook(cur, columns, rows, sheet_name):
+    """엑셀 파일 생성 — 번호는 엑셀 행 순서대로 1부터, 스펙은 폼 항목에 연결된 값만"""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
-    def _fmt_date(value):
-        if not value:
-            return ""
-        try:
-            return value.strftime("%Y-%m-%d")
-        except Exception:
-            return str(value)
+    asset_ids = [row["id"] for row in rows]
+    spec_columns = [column for column in columns if column["kind"] == "spec"]
+    spec_values = _load_spec_column_values(cur, asset_ids, spec_columns) if spec_columns else {}
+    custom_values = _load_custom_column_values(cur, asset_ids) if any(column["kind"] == "custom" for column in columns) else {}
 
-    def _fmt_month(value):
-        if not value:
-            return ""
-        try:
-            return value.strftime("%Y-%m")
-        except Exception:
-            return str(value)
+    thin = Side(style="thin", color="9CA3AF")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet_name
+    for col_idx, column in enumerate(columns, start=1):
+        header = ws.cell(row=1, column=col_idx, value=column["label"])
+        is_auto = column["kind"] == "auto"
+        header.font = Font(bold=True, color="6B7280" if is_auto else "111827")
+        header.fill = PatternFill("solid", fgColor=ITMA_EXCEL_AUTO_FILL if is_auto else ITMA_EXCEL_GROUP_FILLS.get(column["group"], "F3F4F6"))
+        header.alignment = Alignment(horizontal="center", vertical="center")
+        header.border = border
+        ws.column_dimensions[header.column_letter].width = max(12, len(column["label"]) * 2 + 4)
+    for row_no, item in enumerate(rows, start=1):
+        asset_key = str(item["id"])
+        values = []
+        for column in columns:
+            key, kind = column["key"], column["kind"]
+            if key == "row_no":
+                values.append(row_no)
+            elif kind == "spec":
+                values.append(spec_values.get(asset_key, {}).get(key, ""))
+            elif kind == "custom":
+                values.append(custom_values.get(asset_key, {}).get(key, ""))
+            else:
+                values.append(item.get(key, ""))
+        ws.append(values)
+    ws.freeze_panes = "A2"
 
-    def _fmt_datetime(value):
-        if not value:
-            return ""
-        try:
-            return value.strftime("%Y-%m-%d %H:%M")
-        except Exception:
-            return str(value)
+    # 열 위치 → 컬럼 키 매핑 (업로드 시 같은 이름의 스펙 컬럼 구분)
+    map_ws = wb.create_sheet(ITMA_EXCEL_COLUMN_MAP_SHEET)
+    map_ws.append(["열", "컬럼 키", "컬럼 이름"])
+    for col_idx, column in enumerate(columns, start=1):
+        map_ws.append([col_idx, column["key"], column["label"]])
+    map_ws.sheet_state = "hidden"
 
-    def _fmt_export_value(key, value):
-        if key in {"received_date", "released_date", "equipment_status_date", "maintenance_start_date", "maintenance_end_date", "auth_date"}:
-            return _fmt_date(value)
-        if key in {"manufacture_month", "delivery_month"}:
-            return _fmt_month(value)
-        if key == "purchase_datetime":
-            return _fmt_datetime(value)
-        if key in {"maintenance_months", "durability_years"}:
-            return str(value) if value is not None else ""
-        return value or ""
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
 
-    expected_row_len = len(ITMA_TEMPLATE_COLUMNS) + len(ITMA_DETAIL_TEMPLATE_COLUMNS)
-    for row in rows:
-        base = {}
-        idx = 0
-        for key, header in ITMA_TEMPLATE_COLUMNS:
-            value = row[idx] if idx < len(row) else ""
-            base[header] = _fmt_export_value(key, value)
-            idx += 1
-        for key, header in ITMA_DETAIL_TEMPLATE_COLUMNS:
-            value = row[idx] if idx < len(row) else ""
-            base[header] = _fmt_export_value(key, value)
-            idx += 1
-        asset_pk = row[expected_row_len] if len(row) > expected_row_len else None
-        spec_values = spec_values_by_asset_id.get(int(asset_pk), {}) if asset_pk is not None else {}
-        for spec_label in spec_columns:
-            base[_export_spec_header(spec_label)] = spec_values.get(spec_label, "")
-        records.append(base)
-    return pd.DataFrame(
-        records,
-        columns=DISPLAY_HEADERS + DETAIL_DISPLAY_HEADERS + [_export_spec_header(label) for label in spec_columns],
-    )
+
+def _send_assets_excel(permissions, asset_ids, sheet_name, download_name, scope_text):
+    """선택/전체 다운로드 공통: columns(사용자 지정 항목) 또는 기본 항목(preset=basic, 파라미터 없음)"""
+    columns_raw = request.args.get("columns")
+    column_keys = None
+    if columns_raw is not None and (request.args.get("preset") or "").strip() != "basic":
+        column_keys = [token for token in columns_raw.split(",") if token.strip()]
+    _ensure_itma_table()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        columns = _resolve_excel_columns(cur, permissions, column_keys)
+        if not columns:
+            return jsonify({"success": False, "message": "다운로드할 항목이 없습니다. 자산 목록에서 표시할 항목을 선택해주세요."}), 400
+        rows = _load_excel_asset_rows(cur, permissions, asset_ids)
+        if asset_ids is not None and not rows:
+            return jsonify({"success": False, "message": "다운로드할 대상 데이터가 없습니다."}), 404
+        output = _build_assets_workbook(cur, columns, rows, sheet_name)
+        mode_text = "사용자 지정 항목" if column_keys is not None else "기본 항목"
+        log_audit(
+            session.get("username"),
+            "download",
+            resource="ITMA",
+            details=f"자산 {scope_text} 다운로드({mode_text} {len(columns)}개): {len(rows)}건",
+        )
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
 
 
 def _page_permissions_or_redirect():
@@ -3270,6 +3337,59 @@ def get_assets():
         conn.close()
 
 
+def _match_upload_extra_columns(cur, df, col_map, column_map_df=None):
+    """업로드 파일의 상세 스펙·사용자 정의 컬럼 인식 (현재 서버에 있는 항목만). 반환: (인식 컬럼 목록, 무시한 헤더 목록)
+
+    다운로드 파일의 `_columns` 시트가 있으면 열 위치 → 컬럼 키로 인식, 없으면 헤더 이름으로 매칭
+    """
+    used_columns = {value for key, value in col_map.items() if key != "serial_number_candidates" and value}
+    used_columns.update(col_map.get("serial_number_candidates") or [])
+    spec_items = _load_excel_spec_items(cur)
+    spec_by_key = {item["key"]: item for item in spec_items}
+    spec_by_label = {}
+    for item in spec_items:
+        spec_by_label.setdefault(item["label"].casefold(), []).append(item)
+    custom_columns = _load_custom_columns(cur)
+    custom_by_key = {column["key"]: column for column in custom_columns}
+    custom_by_label = {str(column["label"] or "").strip().casefold(): column for column in custom_columns if column["label"]}
+    key_by_position = {}
+    if column_map_df is not None and not column_map_df.empty and len(column_map_df.columns) >= 2:
+        for _, map_row in column_map_df.iterrows():
+            try:
+                key_by_position[int(map_row.iloc[0])] = str(map_row.iloc[1]).strip()
+            except (TypeError, ValueError):
+                continue
+    auto_headers = {re.sub(r"\s+", "", label).lower() for _key, label, _group, kind in ITMA_UPLOAD_TEMPLATE_COLUMNS if kind == "auto"}
+
+    extras, ignored = [], []
+    for position, column in enumerate(df.columns, start=1):
+        if column in used_columns:
+            continue
+        # pandas가 같은 이름 헤더에 붙이는 접미사(.1, .2) 제거
+        header = re.sub(r"\.\d+$", "", str(column)).strip()
+        if not header or header.startswith("Unnamed:") or re.sub(r"\s+", "", header).lower() in auto_headers:
+            continue
+        mapped_key = key_by_position.get(position)
+        if mapped_key:
+            if mapped_key in spec_by_key:
+                extras.append({"column": column, "kind": "spec", "items": [spec_by_key[mapped_key]]})
+            elif mapped_key in custom_by_key:
+                extras.append({"column": column, "kind": "custom", "key": mapped_key})
+            else:
+                # 다운로드 이후 삭제된 컬럼
+                ignored.append(header)
+            continue
+        folded = header.casefold()
+        if folded in spec_by_label:
+            extras.append({"column": column, "kind": "spec", "items": spec_by_label[folded]})
+        elif folded in custom_by_label:
+            extras.append({"column": column, "kind": "custom", "key": custom_by_label[folded]["key"]})
+        else:
+            # 삭제된 컬럼·이전 버전 컬럼(상세스펙_* 등)·알 수 없는 컬럼
+            ignored.append(header)
+    return extras, ignored
+
+
 @itma_bp.route("/assets/upload", methods=["POST"])
 def upload_assets():
     permissions = _require_itma_role()
@@ -3290,9 +3410,15 @@ def upload_assets():
     asset_code_seed = _normalize_asset_seed(request.form.get("asset_code_seed")) or "ITMA"
     _ensure_itma_table()
     try:
-        df = pd.read_excel(file)
+        sheets = pd.read_excel(file, sheet_name=None)
     except Exception as e:
         return jsonify({"success": False, "message": f"파일 읽기 오류: {str(e)}"}), 400
+    # 첫 번째 시트가 자산 데이터, `_columns` 숨김 시트는 다운로드 파일의 컬럼 키 매핑
+    data_sheets = [frame for name, frame in sheets.items() if name != ITMA_EXCEL_COLUMN_MAP_SHEET]
+    if not data_sheets:
+        return jsonify({"success": False, "message": "업로드 파일에 데이터가 없습니다."}), 400
+    df = data_sheets[0]
+    column_map_df = sheets.get(ITMA_EXCEL_COLUMN_MAP_SHEET)
 
     if df.empty:
         return jsonify({"success": False, "message": "업로드 파일에 데이터가 없습니다."}), 400
@@ -3301,8 +3427,6 @@ def upload_assets():
     col_map = _normalize_columns(df)
     data_columns = [col_map[key] for key in ITMA_UPLOAD_COLUMN_ALIASES if col_map.get(key)]
     data_columns += [col for col in col_map["serial_number_candidates"] if col not in data_columns]
-    if not data_columns:
-        return jsonify({"success": False, "message": "ITMA 업로드 양식의 컬럼을 찾을 수 없습니다. 템플릿을 내려받아 작성해 주세요."}), 400
 
     def cell(row, key):
         column = col_map.get(key)
@@ -3318,6 +3442,16 @@ def upload_assets():
     skipped_serial_duplicates = 0
     skipped_duplicate_rows = []
     try:
+        # 상세 스펙·사용자 정의 컬럼 (현재 서버에 있는 항목만, 삭제·이전 버전 컬럼은 무시)
+        extra_columns, ignored_headers = _match_upload_extra_columns(cur, df, col_map, column_map_df)
+        if not data_columns and not extra_columns:
+            return jsonify({"success": False, "message": "ITMA 업로드 양식의 컬럼을 찾을 수 없습니다. 템플릿을 내려받아 작성해 주세요."}), 400
+        can_save_custom = bool(permissions.get("can_manage_columns"))
+        spec_saved = 0
+        spec_skipped = 0
+        custom_saved = 0
+        custom_skipped = 0
+
         # 시리얼 중복 기준: 기본 정보(itma_assets)와 장비 상세(itma_asset_details) 시리얼 모두
         cur.execute(
             """
@@ -3370,7 +3504,7 @@ def upload_assets():
 
         for excel_row_no, (_, row) in enumerate(df.iterrows(), start=2):
             # 번호·수정 일시·수정자(자동 입력)를 제외한 모든 칸이 빈 행만 건너뜀
-            if all(_clean_excel_text(row.get(column)) is None for column in data_columns):
+            if all(_clean_excel_text(row.get(column)) is None for column in data_columns + [extra["column"] for extra in extra_columns]):
                 continue
             item_name = _clean_excel_text(cell(row, "item_name"))
 
@@ -3516,6 +3650,44 @@ def upload_assets():
                     ),
                 )
 
+            # 상세 스펙(자산 카테고리의 스펙 폼 항목만)·사용자 정의 컬럼(컬럼 관리 권한자만)
+            category_key = _normalize_category_key(payload["category"]) if payload["category"] else ""
+            for extra in extra_columns:
+                extra_value = _clean_excel_text(row.get(extra["column"]))
+                if not extra_value:
+                    continue
+                if extra["kind"] == "spec":
+                    spec_item = next((item for item in extra["items"] if item["category_key"] == category_key), None)
+                    if not spec_item:
+                        spec_skipped += 1
+                        continue
+                    cur.execute(
+                        """
+                        INSERT INTO itma_asset_spec_items
+                            (asset_id, spec_label, spec_value, display_order, source_form_item_id, updated_at, updated_by)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (asset_id, source_form_item_id) WHERE source_form_item_id IS NOT NULL
+                        DO UPDATE SET spec_value = EXCLUDED.spec_value, updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by
+                        """,
+                        (new_asset_pk, spec_item["label"], extra_value, spec_item["display_order"], spec_item["form_item_id"], now_ts, actor_name),
+                    )
+                    spec_saved += 1
+                elif can_save_custom:
+                    cur.execute(
+                        """
+                        INSERT INTO itma_custom_column_values (asset_id, column_key, column_value, updated_at, updated_by)
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (asset_id, column_key) DO UPDATE SET
+                            column_value = EXCLUDED.column_value,
+                            updated_at = EXCLUDED.updated_at,
+                            updated_by = EXCLUDED.updated_by
+                        """,
+                        (new_asset_pk, extra["key"], extra_value, now_ts, actor_name),
+                    )
+                    custom_saved += 1
+                else:
+                    custom_skipped += 1
+
             inserted += 1
             if payload.get("asset_id"):
                 existing_asset_ids.add(payload["asset_id"])
@@ -3529,6 +3701,16 @@ def upload_assets():
                 upload_serials[serial_key] = excel_row_no
 
         conn.commit()
+        extra_notes = []
+        if spec_saved or custom_saved:
+            extra_notes.append(f"상세 스펙 값 {spec_saved}건·사용자 정의 값 {custom_saved}건 저장")
+        if spec_skipped:
+            extra_notes.append(f"자산 카테고리의 스펙 폼 항목이 아닌 값 {spec_skipped}건 제외")
+        if custom_skipped:
+            extra_notes.append(f"사용자 정의 컬럼은 컬럼 관리 권한이 없어 {custom_skipped}건 미반영")
+        if ignored_headers:
+            preview = ", ".join(ignored_headers[:5]) + (f" 외 {len(ignored_headers) - 5}개" if len(ignored_headers) > 5 else "")
+            extra_notes.append(f"현재 없는 컬럼 무시: {preview}")
         log_audit(
             user_id,
             "upload",
@@ -3536,6 +3718,7 @@ def upload_assets():
             details=(
                 f"자산 업로드 추가 {inserted}건, 자산번호 중복 미업로드 {skipped_asset_id_duplicates}건, "
                 f"시리얼번호 중복 미업로드 {skipped_serial_duplicates}건"
+                + (f", 상세 스펙 {spec_saved}건, 사용자 정의 {custom_saved}건" if spec_saved or custom_saved else "")
             ),
         )
         return jsonify(
@@ -3545,7 +3728,11 @@ def upload_assets():
                     f"업로드 완료: 추가 {inserted}건 / "
                     f"자산번호 중복으로 미업로드 {skipped_asset_id_duplicates}건 / "
                     f"시리얼번호 중복으로 미업로드 {skipped_serial_duplicates}건"
+                    + "".join(f" / {note}" for note in extra_notes)
                 ),
+                "spec_saved": spec_saved,
+                "custom_saved": custom_saved,
+                "ignored_columns": ignored_headers,
                 "inserted": inserted,
                 "updated": 0,
                 "skipped_duplicates": skipped_duplicates,
@@ -4915,10 +5102,16 @@ def save_spec_form():
                     (saved_form_id, spec_item["label"], spec_item["value"], spec_item["display_order"], show_in_list),
                 )
         removed_item_ids = existing_item_ids - submitted_item_ids
+        removed_value_count = 0
         if removed_item_ids:
+            # 빠진 항목에 입력된 자산 값도 DB에서 함께 삭제
+            removed_value_count = _delete_spec_values_for_form_items(cur, removed_item_ids)
             cur.execute("DELETE FROM itma_spec_form_items WHERE id = ANY(%s)", (list(removed_item_ids),))
         conn.commit()
-        log_audit(session.get("username"), "update", resource="ITMA", details=f"스펙 폼 저장: {form_name} ({category_key})")
+        audit_detail = f"스펙 폼 저장: {form_name} ({category_key})"
+        if removed_item_ids:
+            audit_detail += f", 항목 {len(removed_item_ids)}개 삭제(자산 값 {removed_value_count}건 함께 삭제)"
+        log_audit(session.get("username"), "update", resource="ITMA", details=audit_detail)
         cur.execute(
             """
             SELECT id, category_key, form_name, description, is_active, created_by, created_at, updated_at
@@ -4927,7 +5120,10 @@ def save_spec_form():
             """,
             (saved_form_id,),
         )
-        return jsonify({"success": True, "form": _serialize_spec_form_row(cur, cur.fetchone())})
+        message = "스펙 폼이 저장되었습니다."
+        if removed_value_count:
+            message += f" (삭제한 항목의 자산 값 {removed_value_count}건 함께 삭제)"
+        return jsonify({"success": True, "message": message, "form": _serialize_spec_form_row(cur, cur.fetchone())})
     except Exception as e:
         conn.rollback()
         traceback.print_exc()
@@ -4953,10 +5149,21 @@ def delete_spec_form(form_id):
         row = cur.fetchone()
         if not row:
             return jsonify({"success": False, "message": "대상 스펙 폼을 찾을 수 없습니다."}), 404
+        # 폼 항목에 입력된 자산 값도 DB에서 함께 삭제 (외래키는 연결만 끊으므로 먼저 삭제)
+        cur.execute("SELECT id FROM itma_spec_form_items WHERE form_id = %s", (form_id,))
+        removed_value_count = _delete_spec_values_for_form_items(cur, [item_row[0] for item_row in cur.fetchall()])
         cur.execute("DELETE FROM itma_spec_forms WHERE id = %s", (form_id,))
         conn.commit()
-        log_audit(session.get("username"), "delete", resource="ITMA", details=f"스펙 폼 삭제: {row[0]} ({row[1]})")
-        return jsonify({"success": True, "message": "스펙 폼이 삭제되었습니다."})
+        log_audit(
+            session.get("username"),
+            "delete",
+            resource="ITMA",
+            details=f"스펙 폼 삭제: {row[0]} ({row[1]}), 자산 값 {removed_value_count}건 함께 삭제",
+        )
+        message = "스펙 폼이 삭제되었습니다."
+        if removed_value_count:
+            message += f" (입력된 자산 값 {removed_value_count}건 함께 삭제)"
+        return jsonify({"success": True, "message": message, "removed_value_count": removed_value_count})
     except Exception as e:
         conn.rollback()
         traceback.print_exc()
@@ -4968,7 +5175,7 @@ def delete_spec_form(form_id):
 
 @itma_bp.route("/assets/template-download", methods=["GET"])
 def download_template():
-    """일괄등록 양식: 자산관리 화면 기본 표시 컬럼 25개 (기본 정보 16 / 장비 정보 6 / 장비 상세 3)"""
+    """일괄등록 양식: 기본 형식 26개 고정 (기본 정보 17 / 장비 정보 6 / 장비 상세 3) — 상세 스펙·사용자 정의 컬럼 없음"""
     permissions = _require_itma_role()
     if not isinstance(permissions, dict):
         return permissions
@@ -4977,12 +5184,8 @@ def download_template():
     from openpyxl.comments import Comment
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
-    group_fills = {
-        "기본 정보": "DBEAFE",
-        "장비 정보": "DCFCE7",
-        "장비 상세": "FEF3C7",
-    }
-    auto_fill = "E5E7EB"
+    group_fills = ITMA_EXCEL_GROUP_FILLS
+    auto_fill = ITMA_EXCEL_AUTO_FILL
     thin = Side(style="thin", color="9CA3AF")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
     guides = {
@@ -5055,73 +5258,16 @@ def download_template():
 
 @itma_bp.route("/assets/download", methods=["GET"])
 def download_all_assets():
+    """모든 항목(권한 범위 전체 자산) 다운로드 — 사용자 지정 항목(columns) 또는 기본 항목"""
     permissions = _require_itma_role()
     if not isinstance(permissions, dict):
         return permissions
-
-    _ensure_itma_table()
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute(
-            """
-            SELECT itma_assets.category, itma_assets.site, itma_assets.asset_id, itma_assets.manufacturer,
-                   itma_assets.item_name, itma_assets.serial_number, itma_assets.received_date,
-                   itma_assets.inbound_note, itma_assets.released_date, itma_assets.outbound_note,
-                   itma_assets.storage_location, itma_assets.detail_note, itma_assets.sales_rep,
-                   itma_assets.usage_status,
-                   (
-                       SELECT to_char(MAX(h.created_at), 'YYYY-MM')
-                       FROM itma_asset_history h
-                       WHERE h.asset_id = itma_assets.id
-                         AND h.changed_column = 'usage_status'
-                   ) AS usage_status_changed_month,
-                   itma_assets.manufacture_month,
-                   d.used_group, d.used_user, d.user_position, d.hostname, d.ip_address, d.os_version,
-                   d.network_type, d.mac_address, d.serial_number,
-                   d.equipment_status, d.equipment_status_date, d.vendor_name, d.vendor_contact, d.vendor_phone, d.vendor_mail,
-                   d.maintenance_start_date, d.maintenance_months, d.maintenance_end_date,
-                   d.purchase_datetime, d.delivery_month, d.durability_years,
-                   d.pre_auth_type, d.auth_completion_status, d.auth_number, d.auth_date, d.crypto_verification_number,
-                   itma_assets.id
-            FROM itma_assets
-            LEFT JOIN itma_asset_details d ON d.asset_id = itma_assets.id
-            ORDER BY itma_assets.input_at DESC, itma_assets.id DESC
-            """
-        )
-        rows = [row for row in cur.fetchall() if _can_view_category(permissions, row[0] or "")]
-        asset_ids = [row[-1] for row in rows]
-        spec_columns = _load_export_spec_columns(cur)
-        spec_values = _load_export_spec_values(cur, asset_ids)
-        df = _rows_to_dataframe(rows, spec_columns, spec_values)
-
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="ITMA_자산목록")
-        output.seek(0)
-
-        log_audit(
-            session.get("username"),
-            "download",
-            resource="ITMA",
-            details=f"자산 목록 전체 다운로드: {len(rows)}건",
-        )
-        return send_file(
-            output,
-            as_attachment=True,
-            download_name="ITMA_assets_all.xlsx",
-            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"success": False, "message": str(e)}), 500
-    finally:
-        cur.close()
-        conn.close()
+    return _send_assets_excel(permissions, None, "ITMA_자산목록", "ITMA_assets_all.xlsx", "전체")
 
 
 @itma_bp.route("/assets/download-selected", methods=["GET"])
 def download_selected_assets():
+    """선택 항목(체크한 자산) 다운로드 — 사용자 지정 항목(columns) 또는 기본 항목"""
     permissions = _require_itma_role()
     if not isinstance(permissions, dict):
         return permissions
@@ -5129,79 +5275,13 @@ def download_selected_assets():
     ids_raw = (request.args.get("ids") or "").strip()
     if not ids_raw:
         return jsonify({"success": False, "message": "선택된 항목이 없습니다."}), 400
-
     try:
         ids = [int(token) for token in ids_raw.split(",") if token.strip()]
     except ValueError:
         return jsonify({"success": False, "message": "선택값 형식이 올바르지 않습니다."}), 400
-
     if not ids:
         return jsonify({"success": False, "message": "선택된 항목이 없습니다."}), 400
-
-    _ensure_itma_table()
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        placeholders = ",".join(["%s"] * len(ids))
-        cur.execute(
-            f"""
-            SELECT itma_assets.category, itma_assets.site, itma_assets.asset_id, itma_assets.manufacturer,
-                   itma_assets.item_name, itma_assets.serial_number, itma_assets.received_date,
-                   itma_assets.inbound_note, itma_assets.released_date, itma_assets.outbound_note,
-                   itma_assets.storage_location, itma_assets.detail_note, itma_assets.sales_rep,
-                   itma_assets.usage_status,
-                   (
-                       SELECT to_char(MAX(h.created_at), 'YYYY-MM')
-                       FROM itma_asset_history h
-                       WHERE h.asset_id = itma_assets.id
-                         AND h.changed_column = 'usage_status'
-                   ) AS usage_status_changed_month,
-                   itma_assets.manufacture_month,
-                   d.used_group, d.used_user, d.user_position, d.hostname, d.ip_address, d.os_version,
-                   d.network_type, d.mac_address, d.serial_number,
-                   d.equipment_status, d.equipment_status_date, d.vendor_name, d.vendor_contact, d.vendor_phone, d.vendor_mail,
-                   d.maintenance_start_date, d.maintenance_months, d.maintenance_end_date,
-                   d.purchase_datetime, d.delivery_month, d.durability_years,
-                   d.pre_auth_type, d.auth_completion_status, d.auth_number, d.auth_date, d.crypto_verification_number,
-                   itma_assets.id
-            FROM itma_assets
-            LEFT JOIN itma_asset_details d ON d.asset_id = itma_assets.id
-            WHERE itma_assets.id IN ({placeholders})
-            ORDER BY itma_assets.input_at DESC, itma_assets.id DESC
-            """,
-            tuple(ids),
-        )
-        rows = [row for row in cur.fetchall() if _can_view_category(permissions, row[0] or "")]
-        if not rows:
-            return jsonify({"success": False, "message": "다운로드할 대상 데이터가 없습니다."}), 404
-
-        asset_ids = [row[-1] for row in rows]
-        spec_columns = _load_export_spec_columns(cur)
-        spec_values = _load_export_spec_values(cur, asset_ids)
-        df = _rows_to_dataframe(rows, spec_columns, spec_values)
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="ITMA_선택목록")
-        output.seek(0)
-
-        log_audit(
-            session.get("username"),
-            "download",
-            resource="ITMA",
-            details=f"자산 선택 다운로드: {len(rows)}건",
-        )
-        return send_file(
-            output,
-            as_attachment=True,
-            download_name="ITMA_assets_selected.xlsx",
-            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"success": False, "message": str(e)}), 500
-    finally:
-        cur.close()
-        conn.close()
+    return _send_assets_excel(permissions, ids, "ITMA_선택목록", "ITMA_assets_selected.xlsx", "선택")
 
 
 @itma_bp.route("/assets/new-row", methods=["POST"])

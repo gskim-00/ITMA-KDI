@@ -1,4 +1,4 @@
-﻿<div class="content-card itma-page">
+<div class="content-card itma-page">
     <div class="content-card-header itma-header-search">
         <div id="itmaGlobalSearchPanel" class="itma-global-search-panel" role="search" aria-label="ITMA 전체 검색">
             <div class="itma-global-search-row">
@@ -317,6 +317,40 @@
                         <i class="bi bi-upload"></i> 업로드
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 엑셀 다운로드·업로드 전 안내창 (itma-handler.js openExcelNotice) -->
+<div class="modal fade" id="itmaExcelNoticeModal" tabindex="-1" aria-labelledby="itmaExcelNoticeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="itmaExcelNoticeModalLabel"><i class="bi bi-file-earmark-spreadsheet"></i> <span id="itmaExcelNoticeTitle">엑셀 다운로드</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 small mb-3" id="itmaExcelNoticeMessage" role="status"></div>
+                <p class="small mb-2 d-none" id="itmaExcelNoticeScope"></p>
+                <div class="d-none" id="itmaExcelNoticePresetGroup">
+                    <div class="form-label small fw-semibold mb-1">항목 구성</div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="itmaExcelPreset" id="itmaExcelPresetCustom" value="custom" checked>
+                        <label class="form-check-label" for="itmaExcelPresetCustom">사용자 지정 항목 <span class="text-muted small">— 자산 목록에 표시된 항목을 목록 순서대로</span></label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="itmaExcelPreset" id="itmaExcelPresetBasic" value="basic">
+                        <label class="form-check-label" for="itmaExcelPresetBasic">기본 항목 <span class="text-muted small">— 기본 형식 26개 (기본 정보 17 / 장비 정보 6 / 장비 상세 3)</span></label>
+                    </div>
+                </div>
+                <div class="small text-muted mb-1" id="itmaExcelNoticeColumnsTitle"></div>
+                <ol class="itma-excel-notice-columns small" id="itmaExcelNoticeColumns"></ol>
+                <p class="small text-muted mb-0" id="itmaExcelNoticeFoot"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="btnItmaExcelNoticeConfirm">확인</button>
             </div>
         </div>
     </div>

@@ -419,6 +419,11 @@
             window.showToast?.("최소 1개의 스펙 항목을 입력해주세요.");
             return;
         }
+        // 기존 항목을 뺀 경우: 그 항목에 입력된 자산 값도 함께 삭제됨을 확인
+        const currentForm = state.forms.find((form) => Number(form.id) === Number(getValue("specFormId")));
+        const keptIds = new Set(items.map((item) => Number(item.id)).filter(Boolean));
+        const removedLabels = (currentForm?.items || []).filter((item) => !keptIds.has(Number(item.id))).map((item) => item.label);
+        if (removedLabels.length && !confirm(`삭제한 항목(${removedLabels.join(", ")})에 입력된 자산 값도 함께 삭제되며 되돌릴 수 없습니다.\n저장하시겠습니까?`)) return;
         try {
             const response = await fetch("/itma/spec-forms", {
                 method: "POST",
@@ -442,7 +447,7 @@
             state.selectedId = data.form?.id || null;
             document.getElementById("specFormCategoryFilter").value = state.category;
             syncCurrentCategoryLabel();
-            window.showToast?.("스펙 폼이 저장되었습니다.", "success");
+            window.showToast?.(data.message || "스펙 폼이 저장되었습니다.", "success");
             await loadSpecForms();
         } catch (error) {
             window.showToast?.(error.message || "스펙 폼 저장 실패");
@@ -452,7 +457,7 @@
     async function deleteCurrentSpecForm() {
         const formId = getValue("specFormId");
         if (!formId) return;
-        if (!confirm("선택한 스펙 폼을 삭제하시겠습니까?")) return;
+        if (!confirm("선택한 스펙 폼을 삭제하시겠습니까?\n이 폼 항목에 입력된 자산 값도 함께 삭제되며 되돌릴 수 없습니다.")) return;
         try {
             const response = await fetch(`/itma/spec-forms/${encodeURIComponent(formId)}`, {
                 method: "DELETE",
