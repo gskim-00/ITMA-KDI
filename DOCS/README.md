@@ -28,3 +28,4 @@
 | PLAN-20261124-02 | 자산 추가/수정 화면에서 상세 스펙 폼 입력 | 완료 | 1.2.0 | [COMPLETE/PLAN-20261124-02_asset-form-spec-fields.md](COMPLETE/PLAN-20261124-02_asset-form-spec-fields.md) |
 | PLAN-20261124-03 | 자산 추가/수정 화면 상세 스펙 폼 선택 | 완료 | 1.2.0 | [COMPLETE/PLAN-20261124-03_spec-form-select.md](COMPLETE/PLAN-20261124-03_spec-form-select.md) |
 | PLAN-20261125-01 | 엑셀 다운로드 항목 선택(사용자 지정/기본)·스펙/사용자 정의 컬럼 정리·업로드 안내 | 완료 | 1.3.0 | [COMPLETE/PLAN-20261125-01_excel-visible-columns.md](COMPLETE/PLAN-20261125-01_excel-visible-columns.md) |
+| PLAN-20261125-02 | 엑셀 자동 입력 컬럼 제외·비밀번호 정책 안내·사용자 권한 변경·입력 형식·화면 문구 개선 | 계획 | (1.4.0 예정) | [ACTIVE/PLAN-20261125-02_ui-policy-improvements.md](ACTIVE/PLAN-20261125-02_ui-policy-improvements.md) |
