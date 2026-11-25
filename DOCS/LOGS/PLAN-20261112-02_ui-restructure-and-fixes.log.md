@@ -23,3 +23,8 @@
 | 2026-11-12 19:40 | 검증 | jsdom 화면 점검 34/34 PASS — 대시보드, 목록(읽기 전용·순번·관리 버튼·사업장 탭·정확 일치 필터·상세정보 버튼·URL 조건), user 권한 화면, 추가/수정 저장 | 임시 환경 |
 | 2026-11-13 08:57 | 이슈 | 반영 전 확인용 `docker_info.bat` 실행 시 Windows 보안 경고(게시자 확인 불가) 표시 — 보안 확인은 사용자가 직접 승인하도록 요청하고 대기. 기존 결과 파일(11-11)상 Docker는 `Project_flask_ITMA` 폴더 기준으로 실행 중이었음 → 최신 실행 위치 재확인 필요 | `tools/cleanup/docker_info.bat` |
 | 2026-11-17 11:33 | 결정 | 보류 유지(화면 검증·버전 확정 대기). 후속 요청 상단 메뉴 드롭다운은 별도 계획 PLAN-20261117-01로 진행 | |
+| 2026-11-25 09:56 | 검증 | 사용자 확인: 화면 검증 완료("진행된 상태") | |
+| 2026-11-25 09:57 | 결정 | 사용자 요청으로 PLAN-20261112-02·20261117-01·20261124-01~03을 1.2.0 한 버전으로 확정(계획별 예정 1.2.0~1.3.1 통합) | `CHANGELOG.md`, `VERSION` |
+| 2026-11-25 09:57 | 수정 | `VERSION` 1.2.0, CHANGELOG `[1.2.0]` 작성, `base_common.js` `?v=20261125a` 신규 부여, `dashboard_live.html` `itma.css` `?v=20261124b`, AGENTS.md 기능 맵·`?v=` 위치 갱신 | `VERSION`, `CHANGELOG.md`, `templates/base.html`, `templates/ITMA/dashboard_live.html`, `AGENTS.md` |
+| 2026-11-25 09:58 | 검증 | `node --check`(node:20 컨테이너) admin.js·itma-handler.js·itma-dashboard.js·base_common.js·itma-asset-form.js, Python AST app.py·ITMA.py·database.py 통과 | |
+| 2026-11-25 09:58 | 완료 | COMPLETE로 이동, v1.2.0 | `DOCS/COMPLETE/PLAN-20261112-02_ui-restructure-and-fixes.md` |

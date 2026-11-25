@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> 문서 버전: v1.0.1 · 최종 갱신: 2026-11-04
+> 문서 버전: v1.0.2 · 최종 갱신: 2026-11-25
 > 현재 프로그램 버전은 `VERSION` 파일, 변경 이력은 `CHANGELOG.md`, 작업 계획·로그는 `DOCS/`를 기준으로 합니다.
 
 ## 목적
@@ -24,7 +24,7 @@
 | `models/database.py` | `get_db_connection()`, `init_db()` (공통 테이블·인덱스 생성) | psycopg2 직접 사용 (ORM 미사용) |
 | `services/email_service.py` | `send_email()`, `test_email_connection()` | |
 | `utils/helpers.py` | `log_audit`, `get_client_ip`, IP 파싱/검증(`parse_ip_entries`, `is_ip_in_entries` 등), `paginate`, `sanitize_filename` | 신규 유틸 작성 전 반드시 확인 |
-| `templates/` | `base.html`, `login.html`, `admin.html`, `ITMA/index.html`, `ITMA/dashboard_live.html` 등 | 화면 조각은 `*/sections/` 하위 |
+| `templates/` | `base.html`, `login.html`, `admin.html`, `ITMA/dashboard.html`, `ITMA/index.html`, `ITMA/asset_form.html`, `ITMA/dashboard_live.html` 등 | 화면 조각은 `*/sections/` 하위 |
 | `static/css/` | `common.css`, `login.css`, `admin.css`, `itma.css` | |
 | `static/js/` | `itma-handler.js`(ITMA 화면 전체, 약 5,000줄), `admin.js` + 기능별 관리자 JS | |
 | `migrations/` | 기존 DB 보정용 수동 SQL (`2026-04-24_rbac_legacy_db_backfill.sql`) | 파일명 `YYYY-MM-DD_설명.sql` |
@@ -44,7 +44,9 @@
 - 로그인 통과 조건: 전역 IP 필터(`security_settings`) **AND** 계정별 허용 IP(`users.allowed_ip_list`)
 
 ### ITMA (`itma_bp`, `/itma`)
-- 화면: `/itma/` (카테고리별 자산 그리드)
+- 화면: `/itma/` (자산 현황 대시보드, 데이터 `/dashboard/summary`), `/itma/assets/page` (자산 목록, 읽기 전용), `/itma/assets/new`·`/itma/assets/<id>/edit` (추가/수정 화면 — `itma-asset-form.js`)
+- 추가/수정 화면 API: `/assets/form-options`, `/assets/<id>/form-data`, `/assets/save` (기본·장비 정보 + 사용자 정의 컬럼 + 상세 스펙 `spec`·`spec_form_id`)
+- 상단 메뉴: '자산 관리'(대시보드/자산 목록/자산 추가)·'관리화면'(관리자 섹션) 드롭다운 — `templates/base.html`
 - 카테고리: `/categories` (조회/추가/정렬 `reorder`/삭제)
 - 자산: `/assets` 조회, `/assets/new-row`, `/assets/<id>` PATCH, `/assets/batch-update`, `/assets/delete`
 - 상세: `/assets/<id>/details` (GET/POST), `/details/field` PATCH, `/spec-items/<form_item_id>` PATCH
@@ -144,7 +146,7 @@ DOCS/
 2. `CHANGELOG.md` 최상단에 새 항목 추가 (아래 양식)
 3. 수정한 정적 파일(CSS/JS)을 불러오는 템플릿의 `?v=` 쿼리 갱신
    - 형식: `?v=YYYYMMDD` + 같은 날 순번 알파벳 (예: `?v=20261104a`)
-   - 위치: `templates/admin.html`, `templates/ITMA/index.html`, `templates/ITMA/dashboard_live.html`
+   - 위치: `templates/base.html`, `templates/admin.html`, `templates/ITMA/dashboard.html`, `templates/ITMA/index.html`, `templates/ITMA/asset_form.html`, `templates/ITMA/dashboard_live.html`
 4. DB 변경이 있으면 CHANGELOG 항목에 `DB` 하위 항목과 마이그레이션 파일명 기록
 5. 이 AGENTS.md의 구조/기능 맵이 바뀌었으면 함께 갱신하고 상단 "최종 갱신" 날짜 수정
 

@@ -6,36 +6,30 @@ ONE ITMA 변경 이력입니다. 버전 규칙과 작성 양식은 `AGENTS.md`�
 ## [Unreleased]
 - (다음 변경 사항을 여기에 먼저 적고, 배포 시 버전 번호를 붙입니다)
 
-### 1.3.1 예정 ([PLAN-20261124-03]) — 1.3.0 확정 후 버전 부여
-#### 변경
-- itma: 자산 추가/수정 화면 `상세 스펙`을 카테고리의 모든 스펙 폼 표시 → 스펙 폼 선택 후 선택한 폼 항목만 표시로 변경. 기본 선택은 저장된 값이 있는 폼, 폼이 1개면 자동 선택. 다른 폼 선택 시 이전 폼 값 삭제 안내 (`static/js/itma-asset-form.js`, `static/css/itma.css`)
-- itma: `/assets/save`에 `spec_form_id` 추가 — 선택한 폼 항목만 저장, 이 자산의 다른 스펙 폼 연결 값은 삭제하고 이력 기록 (`blueprints/ITMA.py` `_save_asset_form_spec_values`)
-- `?v=`: `itma.css`·`itma-asset-form.js` 20261124b
-#### 검증
-- 폼 A 저장 → 폼 B 선택 저장 시 A 값 삭제·B 값 저장·이력 기록, 다른 폼 항목 값 무시, 잘못된 폼 id 처리 (컨테이너 내부, 롤백)
-
-### 1.3.0 예정 ([PLAN-20261124-02]) — 1.2.x 확정 후 버전 부여
-#### 추가
-- itma: 자산 추가/수정 화면에 `상세 스펙` 영역 추가 — 선택한 카테고리의 스펙 폼 항목(예: CPU, 메모리)을 폼별로 표시·입력, 카테고리 변경 시 해당 폼으로 다시 표시 (`templates/ITMA/asset_form.html`, `static/js/itma-asset-form.js`, `static/css/itma.css`)
-- itma: `form-data` 응답에 스펙 값(`spec`) 추가, `/assets/save`에서 스펙 값 저장 — 현재 카테고리의 활성 스펙 폼 항목만 반영, 빈 값은 삭제, 변경 시 `asset_details` 이력 기록 (`blueprints/ITMA.py` `_save_asset_form_spec_values`)
-- `?v=`: `itma.css`·`itma-asset-form.js` 20261124a
-#### 검증
-- 스펙 폼 조회·수정 화면 값 조회 API 200, 저장 헬퍼 추가·변경 없음·수정·비우기·다른 카테고리/잘못된 항목 무시·이력 기록 (컨테이너 내부, 롤백)
-
-### 1.2.2 예정 ([PLAN-20261124-01]) — 1.2.1 확정 후 버전 부여
-#### 변경
-- itma: 자산 목록의 스펙 폼 컬럼명을 `카테고리 / 폼명 / 항목명` 대신 스펙 폼에서 입력한 항목명(예: `CPU`)만 표시 (`blueprints/ITMA.py` `_load_visible_spec_columns`)
-#### 검증
-- 자산 목록 헤더·컬럼 표시 설정에 항목명만 표시, 해당 컬럼 정렬·필터·인라인 수정
-
-### 1.2.1 예정 ([PLAN-20261117-01]) — 1.2.0 확정 후 버전 부여
-#### 변경
-- itma: 상단 메뉴 '자산 관리'를 드롭다운(대시보드/자산 목록/자산 추가)으로 변경, '메인화면' 버튼은 드롭다운으로 흡수하고 로고를 메인 링크로 변경 (`templates/base.html`, `static/css/common.css`)
-- admin: 상단 메뉴 '관리화면'을 관리자 사이드바와 같은 그룹 구성의 드롭다운으로 변경, 관리 화면에서도 항상 표시 (`templates/base.html`)
-- admin: URL 해시 변경 시 해당 섹션으로 전환 (`static/js/admin.js`)
-- `?v=`: `common.css` 20261117a(신규 부여), `admin.js` 20261117a
-#### 검증
-- 권한별 메뉴 렌더링(admin / 편집 그룹 / 조회 전용 / 권한 정보 없음), 드롭다운 열림·이동, 관리 화면 내 해시 이동
+## [1.2.0] - 2026-11-25 ([PLAN-20261112-02], [PLAN-20261117-01], [PLAN-20261124-01], [PLAN-20261124-02], [PLAN-20261124-03])
+> 진행 중이던 5개 계획을 사용자 요청에 따라 1.2.0 한 버전으로 묶어 확정 (계획별 예정 버전 1.2.0·1.2.1·1.2.2·1.3.0·1.3.1)
+### 추가
+- itma: 화면 구성 개편 — `/itma/` = 자산 현황 대시보드(권한 범위 집계, 운영상태·사업장 분포), `/itma/assets/page` = 자산 관리(목록), `/itma/assets/new`·`/itma/assets/<id>/edit` = 자산 추가/수정 전용 화면(저장 버튼으로만 저장). API `form-options`·`form-data`·`save`·`dashboard/summary` 추가 (`blueprints/ITMA.py`, `templates/ITMA/dashboard.html`, `templates/ITMA/asset_form.html`, `static/js/itma-dashboard.js`, `static/js/itma-asset-form.js`) [PLAN-20261112-02]
+- itma: 자산 사업장(`site`) 항목 추가 — 목록 사업장 탭 조회, 추가/수정 화면, 엑셀 템플릿·업로드·다운로드, 일괄 수정, 삭제/복원 이력에 반영 [PLAN-20261112-02]
+- itma: 자산 추가/수정 화면 `상세 스펙` 영역 — 카테고리의 스펙 폼 중 하나를 선택해 항목 값 입력(저장 값이 있는 폼 자동 선택, 폼이 1개면 자동 선택), 다른 폼으로 바꿔 저장하면 이전 폼 값 삭제·이력 기록. `form-data` 응답 `spec`, `/assets/save`의 `spec`·`spec_form_id` (`blueprints/ITMA.py` `_save_asset_form_spec_values`, `static/js/itma-asset-form.js`) [PLAN-20261124-02, PLAN-20261124-03]
+### 변경
+- itma: 자산 목록 읽기 전용(칸 직접 수정 제거), 번호 = 조회 결과 기준 순번, 행마다 '상세정보'·'수정/보기' 버튼, 선택형 필터 정확 일치, 대시보드 링크 조건(`?site`, `?status`). 일괄 수정·엑셀 업로드·선택 삭제는 유지, '행 추가' → '자산 추가' (`static/js/itma-handler.js`, `templates/ITMA/index.html`, `templates/ITMA/sections/itma_page.html`) [PLAN-20261112-02]
+- itma: 운영상태 O/X → 정상/사용/미사용/교체/폐기 선택식, 장비상태와 같은 값 체계로 동기화 [PLAN-20261112-02]
+- itma: 자산 목록 스펙 폼 컬럼명을 `카테고리 / 폼명 / 항목명` 대신 항목명(예: `CPU`)만 표시 (`_load_visible_spec_columns`) [PLAN-20261124-01]
+- itma: 상단 메뉴 '자산 관리'를 드롭다운(대시보드/자산 목록/자산 추가)으로 변경, '메인화면' 버튼은 드롭다운으로 흡수하고 로고를 메인 링크로 변경 (`templates/base.html`, `static/css/common.css`) [PLAN-20261117-01]
+- admin: 상단 메뉴 '관리화면'을 관리자 사이드바와 같은 그룹 구성의 드롭다운으로 변경, 관리 화면에서도 항상 표시, URL 해시 변경 시 해당 섹션으로 전환 (`templates/base.html`, `static/js/admin.js`) [PLAN-20261117-01]
+- `?v=`: `common.css`·`admin.js` 20261117a, `itma-handler.js`·`itma-dashboard.js` 20261112a, `itma.css`·`itma-asset-form.js` 20261124b(`dashboard_live.html` 포함), `base_common.js` 20261125a(신규 부여)
+### 수정
+- auth: 세션 타임아웃 설정이 반영되지 않던 문제 — 화면 자동 호출(서버시간·시스템상태·세션목록·통계)이 활동시간을 갱신하던 것을 제외, 만료 시 API는 401 JSON·화면은 로그인 페이지로 이동 (`app.py`, `static/js/base_common.js`) [PLAN-20261112-02]
+- itma: 삭제 이력 복원 시 자산번호가 다르게 표시·복원되던 문제 — `asset_code`·`asset_id`·입력일 보존(번호 사용 중이면 새 번호+안내), 이력 화면 '번호' → '자산번호' [PLAN-20261112-02]
+- itma: user 권한 계정에 사용자 정의 컬럼 입력·삭제가 노출되던 문제 — 컬럼 관리 권한자만 표시·저장 [PLAN-20261112-02]
+### DB
+- `itma_assets.site VARCHAR(100)` 추가 (`ADD COLUMN IF NOT EXISTS`, 자동)
+- `itma_assets.usage_status` VARCHAR(1) → VARCHAR(20), 기본값 '사용', 기존 O→사용·X→미사용 자동 변환 (기동 시 1회성, 재실행 안전)
+### 검증
+- PLAN-20261112-02: 임시 DB + Flask test client 38/39 PASS, jsdom 화면 점검 34/34 PASS, 사용자 화면 확인
+- PLAN-20261117-01: Jinja 템플릿 파싱, 권한별 메뉴 렌더링, 사용자 화면 확인
+- PLAN-20261124-01~03: Python·JS 문법 검사, 스펙 API 200, 스펙 저장 헬퍼 롤백 테스트(추가·수정·비우기·폼 변경 시 이전 값 삭제·이력)
 
 ## [1.1.0] - 2026-11-12 ([PLAN-20261112-01])
 ### 변경

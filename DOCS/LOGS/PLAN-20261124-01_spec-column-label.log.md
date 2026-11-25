@@ -9,3 +9,4 @@
 | 2026-11-24 17:45 | 검증 | `python -m py_compile blueprints/ITMA.py` 통과, BOM 없음 | `blueprints/ITMA.py` |
 | 2026-11-24 17:46 | 결정 | 선행 계획(PLAN-20261112-02 → 1.2.0, PLAN-20261117-01 → 1.2.1)이 진행중이라 기존 방식대로 CHANGELOG `[Unreleased]`에 `1.2.2 예정`으로 기록, `VERSION`은 1.1.0 유지. 정적 파일 변경 없어 `?v=` 갱신 없음 | `CHANGELOG.md` |
 | 2026-11-24 17:46 | 완료 | COMPLETE로 이동, v1.2.2 예정 (화면 수동 검증은 사용자 확인 대기) | `DOCS/COMPLETE/PLAN-20261124-01_spec-column-label.md` |
+| 2026-11-25 09:57 | 결정 | 예정 버전 → 사용자 요청으로 1.2.0에 통합 확정 | `CHANGELOG.md` |
